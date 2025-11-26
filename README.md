@@ -153,6 +153,23 @@ git clone https://github.com/iparesh18/langchain-js-zero-to-advanced
 npm install
 ```
 
+This will install the following dependencies used across all chapters:
+
+- **@langchain/core** — core LangChain components  
+- **@langchain/classic** — legacy abstractions  
+- **@langchain/google-genai** — Gemini 2.0 models  
+- **@langchain/openai** — OpenAI models (optional)  
+- **@langchain/langgraph** — multi-agent + workflow engine  
+- **dotenv** — load `.env` API keys  
+- **openai** — direct OpenAI SDK  
+- **serpapi** — Google Search API  
+- **zod** — schema validation  
+
+Make sure you create your `.env` file in root:
+
+
+```
+
 3. Create `.env`:
 ```
 cp .env.example .env
