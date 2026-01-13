@@ -1,112 +1,112 @@
-# 📘 Lesson 13 — Production-Grade Multi-Agent System  
-### (Real Scraping • Real Search • Hard Routing • REPL Chat • Zod Schema)
+# 📘 第13课 — 生产级多智能体系统
+### (真实抓取 • 真实搜索 • 硬性路由 • REPL 聊天 • Zod Schema)
 
-This is the most **real-world**, **production-level**, and **feature-rich** agent in the entire repository.
+这是整个存储库中最**真实世界**、**生产级别**和**功能最丰富**的智能体。
 
-Lesson 13 shows how to build **Perplexity-style agents**, using:
+第13课展示了如何使用以下技术构建 **Perplexity 风格的智能体**：
 
-- **Real Browser Scraping (Puppeteer)**
-- **Real Web Search (Tavily API)**
-- **Hard + LLM Routing**
-- **Zod for Schema Validation**
-- **LangGraph State Machines**
-- **REPL terminal chat**
+- **真实浏览器抓取 (Puppeteer)**
+- **真实网络搜索 (Tavily API)**
+- **硬性 + LLM 路由**
+- **Zod 进行 Schema 验证**
+- **LangGraph 状态机**
+- **REPL 终端聊天**
 
-This is NOT a demo.  
-This is a template you can use for startups and production AI.
-
----
-
-# 🧱 Why This Lesson Exists
-
-Lessons 11 → 12 taught you the basics of agent workflow.
-
-Lesson 13 is where it becomes **real**:
-
-- Real search  
-- Real scraping  
-- Real routing  
-- Real error-handling  
-- Real message schemas  
-- Real agent lifecycle  
-
-This is the point where your agent becomes **useful**, not just “cool code.”
+这**不是**一个演示。
+这是一个可用于初创公司和生产级 AI 的模板。
 
 ---
 
-# 📦 Packages Used (And WHY)
+# 🧱 为什么有这节课
 
-| Package | Why we need it |
-|---------|----------------|
-| **@langchain/langgraph** | Build multi-node agent workflows |
-| **@langchain/openai** | Use GPT-4o-mini reliably for routing + summarization |
-| **puppeteer** | **Real browser scraping**, unlike regex scraping |
-| **zod** | Validate agent state & prevent broken messages |
-| **dotenv** | Store API keys (OPENAI, TAVILY) |
-| **Tavily API** | **Real internet search** with factual answers |
-| **readline** | Interactive REPL (terminal chat) |
+第11课 → 第12课教您智能体工作流的基础知识。
 
----
+第13课是它变得**真实**的地方：
 
-# 🤖 Why Use OpenAI Instead of Gemini Here?
+- 真实搜索
+- 真实抓取
+- 真实路由
+- 真实错误处理
+- 真实消息 Schema
+- 真实智能体生命周期
 
-Great question.
-
-Gemini is amazing, but:
-
-### ✔ OpenAI GPT-4o-mini is:
-- Faster
-- Cheaper
-- More deterministic
-- Better at **short routing decisions**
-- More reliable with “STRICT router instructions”
-
-### ✔ LangGraph’s official examples use OpenAI  
-So compatibility is perfect.
-
-### ✔ Tavily recommends OpenAI for search → answer use cases
-
-You **can** swap in Gemini later.  
-But for Lesson 13, OpenAI is the safest + most stable choice.
+这是您的智能体变得**有用**的时刻，而不仅仅是“很酷的代码”。
 
 ---
 
-# 🔥 ARCHITECTURE (In One Diagram)
+# 📦 使用的包 (以及原因)
+
+| 包                  | 我们为什么需要它                                     |
+|---------------------|----------------------------------------------------|
+| **@langchain/langgraph** | 构建多节点智能体工作流                               |
+| **@langchain/openai**    | 可靠地使用 GPT-4o-mini 进行路由 + 总结             |
+| **puppeteer**       | **真实浏览器抓取**，与正则表达式抓取不同             |
+| **zod**             | 验证智能体状态并防止消息损坏                         |
+| **dotenv**          | 存储 API 密钥 (OPENAI, TAVILY)                     |
+| **Tavily API**      | **真实互联网搜索**，提供事实性答案                   |
+| **readline**        | 交互式 REPL (终端聊天)                             |
+
+---
+
+# 🤖 为什么这里使用 OpenAI 而不是 Gemini？
+
+好问题。
+
+Gemini 很棒，但是：
+
+### ✔ OpenAI GPT-4o-mini 具有以下优点：
+- 更快
+- 更便宜
+- 更具确定性
+- 更擅长**短路由决策**
+- 对于“严格的路由器指令”更可靠
+
+### ✔ LangGraph 的官方示例使用 OpenAI
+因此兼容性完美。
+
+### ✔ Tavily 建议 OpenAI 用于搜索 → 回答用例
+
+您可以稍后替换为 Gemini。
+但对于第13课，OpenAI 是最安全 + 最稳定的选择。
+
+---
+
+# 🔥 架构 (一图胜千言)
 
 ```
-User Input
-     ↓
-[ PLAN NODE ]
-   - Hard rule: URL → SCRAPE
-   - Else: LLM decides SEARCH or ANSWER
-     ↓
- ┌────────────┬────────────┐
- ↓            ↓            ↓
-SCRAPE      SEARCH      ANSWER
- ↓            ↓            ↓
-        [ ANSWER NODE ]
-             ↓
-            END
+用户输入
+      ↓
+[ 规划节点 ]
+    - 硬性规则: URL → SCRAPE
+    - 否则: LLM 决定 SEARCH 或 ANSWER
+      ↓
+  ┌────────────┬────────────┐
+  ↓            ↓            ↓
+抓取          搜索          回答
+  ↓            ↓            ↓
+         [ 回答节点 ]
+              ↓
+             结束
 ```
 
 ---
 
-# 🧩 FILE STRUCTURE
+# 🧩 文件结构
 
 ```
 /lesson-13/
-   ├── 13-multi-agent.js   ← main agent graph
-   ├── scrape.js           ← Puppeteer scraper
-   └── .env                ← API keys
+    ├── 13-multi-agent.js   ← 主智能体图
+    ├── scrape.js           ← Puppeteer 抓取器
+    └── .env                ← API 密钥
 ```
 
 ---
 
-# 🧠 FULL BLOCK-BY-BLOCK EXPLANATION (MAIN FILE)
+# 🧠 完整逐块解释 (主文件)
 
 ---
 
-## 🟦 **1. Imports + dotenv**
+## 🟦 **1. 导入 + dotenv**
 
 ```js
 import { config } from "dotenv";
@@ -119,27 +119,27 @@ import { z } from "zod";
 import { scrapeReact } from "./scrape.js";
 ```
 
-### ✔ What this does
-- Loads env variables  
-- Imports LLM  
-- Imports LangGraph  
-- Imports Zod for schemas  
-- Imports Puppeteer scraper  
+### ✔ 作用
+- 加载环境变量
+- 导入 LLM
+- 导入 LangGraph
+- 导入 Zod 用于 Schema
+- 导入 Puppeteer 抓取器
 
 ---
 
-## 🟦 **2. Ensure API Keys**
+## 🟦 **2. 确保 API 密钥**
 
 ```js
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
 ```
 
-If missing → clean error.
+如果缺少 → 清晰的错误。
 
 ---
 
-## 🟦 **3. Create the Model**
+## 🟦 **3. 创建模型**
 
 ```js
 const model = new ChatOpenAI({
@@ -149,16 +149,16 @@ const model = new ChatOpenAI({
 });
 ```
 
-### ✔ Why GPT-4o-mini?
-- Deterministic
-- Cheap
-- Perfect for routing
-- Strong reasoning
-- Stable for production agents
+### ✔ 为什么选择 GPT-4o-mini？
+- 确定性
+- 便宜
+- 完美路由
+- 强大的推理能力
+- 生产级智能体的稳定性
 
 ---
 
-## 🟦 **4. Zod Message Schema**
+## 🟦 **4. Zod 消息 Schema**
 
 ```js
 const MessageSchema = z.object({
@@ -171,18 +171,18 @@ const State = z.object({
 });
 ```
 
-### ✔ Why Zod?
-To prevent:
+### ✔ 为什么使用 Zod？
+防止：
 
-- malformed messages  
-- missing roles  
-- broken state updates  
+- 格式错误的消息
+- 缺失的角色
+- 损坏的状态更新
 
-Real agents MUST be safe.
+真实智能体必须是安全的。
 
 ---
 
-## 🟦 **5. Utility: Find Last User Message**
+## 🟦 **5. 工具: 查找最后一条用户消息**
 
 ```js
 function findLastUserMessage(state) {
@@ -190,12 +190,12 @@ function findLastUserMessage(state) {
 }
 ```
 
-Simple helper.  
-Used in **every node**.
+简单的辅助函数。
+在**每个节点**中使用。
 
 ---
 
-## 🟦 **6. Tavily Search Node**
+## 🟦 **6. Tavily 搜索节点**
 
 ```js
 async function tavilySearch(query) {
@@ -219,14 +219,14 @@ async function tavilySearch(query) {
 }
 ```
 
-### ✔ Why Tavily?
-- Real-time search  
-- Accurate result extraction  
-- Designed for agents  
+### ✔ 为什么选择 Tavily？
+- 实时搜索
+- 准确的结果提取
+- 专为智能体设计
 
 ---
 
-## 🟦 **7. PLAN NODE — Hard Router + LLM Router**
+## 🟦 **7. 规划节点 (PLAN NODE) — 硬性路由器 + LLM 路由器**
 
 ```js
 async function planNode(state) {
@@ -242,9 +242,9 @@ async function planNode(state) {
     {
       role: "system",
       content: `
-You are a STRICT router. Output ONLY one word: "search" or "answer".
-If the user asks anything recent like prices, days, current, etc → "search".
-Else → "answer".
+你是一个严格的路由器。只输出一个单词："search" 或 "answer"。
+如果用户询问任何近期信息，如价格、日期、当前情况等 → "search"。
+否则 → "answer"。
 `,
     },
     ...state.messages,
@@ -259,16 +259,16 @@ Else → "answer".
 }
 ```
 
-### ✔ Why this router is powerful?
-- If URL exists → scrape  
-- If question is about **today / now / recent** → search  
-- Else → answer from memory  
+### ✔ 为什么这个路由器功能强大？
+- 如果存在 URL → 抓取
+- 如果问题是关于**今天 / 现在 / 近期** → 搜索
+- 否则 → 从记忆中回答
 
-This is EXACTLY how Perplexity routes tools.
+这正是 Perplexity 路由工具的方式。
 
 ---
 
-## 🟦 **8. SCRAPE NODE**
+## 🟦 **8. 抓取节点 (SCRAPE NODE)**
 
 ```js
 async function scrapeNode(state) {
@@ -288,11 +288,11 @@ async function scrapeNode(state) {
 }
 ```
 
-### ✔ Uses real scraping (from scrape.js)
+### ✔ 使用真实的抓取 (来自 scrape.js)
 
 ---
 
-## 🟦 **9. SEARCH NODE**
+## 🟦 **9. 搜索节点 (SEARCH NODE)**
 
 ```js
 async function searchNode(state) {
@@ -307,7 +307,7 @@ async function searchNode(state) {
 
 ---
 
-## 🟦 **10. ANSWER NODE**
+## 🟦 **10. 回答节点 (ANSWER NODE)**
 
 ```js
 async function answerNode(state) {
@@ -316,17 +316,17 @@ async function answerNode(state) {
   const userMsg = findLastUserMessage(state)?.content || "";
 
   const prompt = `
-IMPORTANT:
-- Do NOT say "I cannot browse".
-- Scraping/search was ALREADY done by your tools.
-- Use provided scraped/search data ONLY.
+重要提示:
+- 不要说“我无法浏览”。
+- 抓取/搜索已经由你的工具完成。
+- 只使用提供的抓取/搜索数据。
 
-User: ${userMsg}
+用户: ${userMsg}
 
-Scraped: ${scrapedEntry ? scrapedEntry.content.replace(/^SCRAPED=/, "") : "NONE"}
-Searched: ${searchedEntry ? searchedEntry.content.replace(/^SEARCHED=/, "") : "NONE"}
+抓取内容: ${scrapedEntry ? scrapedEntry.content.replace(/^SCRAPED=/, "") : "无"}
+搜索内容: ${searchedEntry ? searchedEntry.content.replace(/^SEARCHED=/, "") : "无"}
 
-Give a concise final answer.
+给出简洁的最终答案。
 `;
 
   const out = await model.invoke([{ role: "user", content: prompt }]);
@@ -336,30 +336,30 @@ Give a concise final answer.
 }
 ```
 
-### ✔ Why this is powerful?
-Stops LLM hallucination like:
+### ✔ 为什么这功能强大？
+阻止 LLM 产生幻觉，例如：
 
-- “I can’t browse”
-- “I don’t know that data”
-- “I can’t access internet”
-
----
-
-# 🧩 EXPLAINING **scrape.js** (Block-by-Block)
+- “我无法浏览”
+- “我不知道那个数据”
+- “我无法访问互联网”
 
 ---
 
-## 🟦 **1. Import puppeteer**
+# 🧩 解释 **scrape.js** (逐块)
+
+---
+
+## 🟦 **1. 导入 puppeteer**
 
 ```js
 import puppeteer from "puppeteer";
 ```
 
-### ✔ Full browser control.
+### ✔ 完全的浏览器控制。
 
 ---
 
-## 🟦 **2. scrapeReact() function**
+## 🟦 **2. scrapeReact() 函数**
 
 ```js
 export async function scrapeReact(url, { timeout = 30000 } = {}) {
@@ -371,12 +371,12 @@ export async function scrapeReact(url, { timeout = 30000 } = {}) {
     const page = await browser.newPage();
 ```
 
-### ✔ Opens headless browser  
-### ✔ Loads the page in full
+### ✔ 开启无头浏览器
+### ✔ 完整加载页面
 
 ---
 
-## 🟦 **3. Fake viewport + user-agent**
+## 🟦 **3. 虚假视口 + 用户代理**
 
 ```js
     await page.setViewport({ width: 1280, height: 800 });
@@ -385,23 +385,23 @@ export async function scrapeReact(url, { timeout = 30000 } = {}) {
     );
 ```
 
-### ✔ Pretend to be a real user  
-### ✔ Helps avoid blocking
+### ✔ 假装是真实用户
+### ✔ 有助于避免阻止
 
 ---
 
-## 🟦 **4. Navigate + wait**
+## 🟦 **4. 导航 + 等待**
 
 ```js
     await page.goto(url, { waitUntil: "networkidle2", timeout });
 ```
 
-### ✔ Waits for JS-heavy sites  
+### ✔ 等待 JS 密集型网站
 ### (React, Next.js, Vue, Angular)
 
 ---
 
-## 🟦 **5. Extract readable text**
+## 🟦 **5. 提取可读文本**
 
 ```js
     const content = await page.evaluate(() => {
@@ -409,23 +409,23 @@ export async function scrapeReact(url, { timeout = 30000 } = {}) {
     });
 ```
 
-### ✔ Gets full text content  
-### ✔ Works on ALL modern websites
+### ✔ 获取完整的文本内容
+### ✔ 适用于所有现代网站
 
 ---
 
-## 🟦 **6. Trim and slice**
+## 🟦 **6. 修剪和切片**
 
 ```js
     return content.replace(/\s+/g, " ").trim().slice(0, 60_000);
 ```
 
-### ✔ Output optimized for LLM input  
-### ✔ Avoids huge tokens
+### ✔ 输出针对 LLM 输入进行了优化
+### ✔ 避免大量 token
 
 ---
 
-## 🟦 **7. Close the browser**
+## 🟦 **7. 关闭浏览器**
 
 ```js
   } finally {
@@ -436,20 +436,20 @@ export async function scrapeReact(url, { timeout = 30000 } = {}) {
 
 ---
 
-# ▶️ HOW TO RUN
+# ▶️ 如何运行
 
 ```
 npm install
 ```
 
-Add `.env`:
+添加 `.env`：
 
 ```
 OPENAI_API_KEY=your_key
 TAVILY_API_KEY=your_key
 ```
 
-Run REPL:
+运行 REPL：
 
 ```
 node 13-multi-agent.js
@@ -457,30 +457,30 @@ node 13-multi-agent.js
 
 ---
 
-# 🧪 Example PROMPTS
+# 🧪 示例提示
 
 ```
-> What is the price of Bitcoin today?
-> Summarize https://webreal.in
-> Who is the founder of OpenAI?
-> Give me latest Google stock performance
+> 今天比特币的价格是多少？
+> 总结 https://webreal.in
+> OpenAI 的创始人是谁？
+> 告诉我 Google 最新的股票表现
 ```
 
 ---
 
-# 🎉 Final Notes
+# 🎉 最终说明
 
-Lesson 13 is **production-level agent architecture**.
+第13课是**生产级智能体架构**。
 
-This is the SAME STRUCTURE used for:
+这与以下系统使用**相同结构**：
 
-- Perplexity  
-- WebPilot  
-- BrowserGPT  
-- Research Agents  
-- AI Assistants with Tools  
-- Multi-Agent Supervisor Systems  
+- Perplexity
+- WebPilot
+- BrowserGPT
+- 研究智能体
+- 带有工具的 AI 助手
+- 多智能体主管系统
 
-This is the future of MERN + AI + LangChain combined.
+这是 MERN + AI + LangChain 结合的未来。
 
 ---

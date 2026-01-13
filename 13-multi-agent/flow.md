@@ -1,188 +1,186 @@
-# 🔥 Full Execution Flow (Lesson 13 Multi-Agent System)
+# 🔥 完整执行流程 (第 13 课 多智能体系统)
 
-This is the complete flow of how the Lesson 13 agent works internally —  
-from user input → routing → scraping/search → final answer.
+这是第 13 课智能体内部工作原理的完整流程 —— 从用户输入 → 路由 → 抓取/搜索 → 最终答案。
 
-Paste this section anywhere in your README.
+你可以将此部分粘贴到 README 的任何位置。
 
 ---
 
-## 🧭 High-Level Flow
+## 🧭 高层流程
 
 ```
-User Input
+用户输入
      ↓
-PLAN NODE  
-  - Hard rule: if URL → SCRAPE
-  - Else LLM decides → SEARCH or ANSWER
+规划节点 (PLAN NODE)
+  - 硬性规则：如果是 URL → 抓取 (SCRAPE)
+  - 否则 LLM 决定 → 搜索 (SEARCH) 或 回答 (ANSWER)
      ↓
 ┌───────────────┬────────────────┬────────────────┐
 │               │                │                │
-│  SCRAPE NODE  │  SEARCH NODE   │  ANSWER NODE   │
-│ (if URL)      │ (Tavily API)   │ (direct QA)    │
+│  抓取节点      │   搜索节点      │   回答节点      │
+│  (SCRAPE NODE)│  (SEARCH NODE) │ (ANSWER NODE)  │
+│  (针对 URL)    │  (Tavily API)  │ (直接问答)      │
 │               │                │                │
 └───────────────┴────────────────┴────────────────┘
                 ↓
-         ANSWER NODE  
-         (Final reasoning
-         using scraped/
-         searched data)
+          回答节点 (ANSWER NODE)
+          (利用抓取/搜索的数据
+           进行最终推理)
                 ↓
-               END
+               结束 (END)
 ```
 
 ---
 
-## 🧠 Detailed Step-by-Step Flow
+## 🧠 详细分步流程
 
-### **1️⃣ User types a message**  
-Example:
+### **1️⃣ 用户输入消息**
+示例：
 ```
-Summarize https://vercel.com
+总结一下 https://vercel.com
 ```
-OR
+或者
 ```
-What is Bitcoin price today?
+今天的比特币价格是多少？
 ```
-OR
+或者
 ```
-Tell me about OpenAI founders.
+告诉我关于 OpenAI 创始人的信息。
 ```
 
 ---
 
-### **2️⃣ PLAN NODE runs first (brain of the agent)**
+### **2️⃣ PLAN NODE 首先运行 (智能体的大脑)**
 
-The Planner performs:
+规划器执行以下操作：
 
-#### ✔ Hard Routing (Rule-Based)
-- If user message contains a URL →**PLAN=scrape**
+#### ✔ 硬性路由 (基于规则)
+- 如果用户消息包含 URL → **PLAN=scrape**
 
-#### ✔ LLM Routing (Smarter)
-If no URL → LLM decides:
-- "search" → if question needs current facts  
-- "answer" → if it's a normal knowledge question  
+#### ✔ LLM 路由 (更智能)
+如果没有 URL → LLM 做出决策：
+- "search" → 如果问题需要当前事实
+- "answer" → 如果是一个普通的知识性问题
 
-Planner appends:
+规划器追加以下状态：
 ```
 PLAN=scrape
 ```
-OR  
+或者
 ```
 PLAN=search
 ```
-OR  
+或者
 ```
 PLAN=answer
 ```
 
 ---
 
-### **3️⃣ Conditional Graph Routing**
+### **3️⃣ 图形条件路由**
 
-Based on the PLAN:
+根据 PLAN (计划)：
 
 ```
-If PLAN=scrape → go to SCRAPE node
-If PLAN=search → go to SEARCH node
-Else → go to ANSWER node
+如果 PLAN=scrape → 进入 SCRAPE 节点
+如果 PLAN=search → 进入 SEARCH 节点
+否则 → 进入 ANSWER 节点
 ```
 
-This is real agent orchestration.
+这是真正的智能体编排。
 
 ---
 
-### **4️⃣ SCRAPE NODE (if URL)**
+### **4️⃣ SCRAPE NODE (针对 URL)**
 
-- Opens a **real browser** using Puppeteer  
-- Loads the page fully  
-- Extracts all text from React/Next.js/Vue apps  
-- Cleans & trims  
-- Saves as:
-
-```
-SCRAPED=full_clean_text
-```
-
----
-
-### **5️⃣ SEARCH NODE (if search)**
-
-- Sends query to **Tavily Search API**  
-- Gets:
-  - answer  
-  - citations  
-  - search summary  
-- Result saved as:
+- 提取用户消息中的 URL
+- 调用抓取工具（在本项目中已改为高效的 fetch 模式）
+- 提取网页中的纯文本内容
+- 清理并截断内容
+- 保存为：
 
 ```
-SEARCHED={tavily JSON response}
+SCRAPED=清理后的完整文本
 ```
 
 ---
 
-### **6️⃣ ANSWER NODE (Final reasoning)**
+### **5️⃣ SEARCH NODE (如果需要搜索)**
 
-This node:
+- 将查询发送到 **Tavily 搜索 API**
+- 获取：
+  - 答案
+  - 引用
+  - 搜索摘要
+- 结果保存为：
 
-1. Reads:
+```
+SEARCHED={tavily JSON 响应内容}
+```
+
+---
+
+### **6️⃣ ANSWER NODE (最终推理)**
+
+此节点执行以下操作：
+
+1. 读取状态：
    ```
    SCRAPED=...
    SEARCHED=...
    ```
-2. Reads user message  
-3. Builds a special prompt that forces the model:
-   - not to say “I can’t browse”
-   - not to hallucinate  
-   - to only use data obtained from tools  
+2. 读取用户消息
+3. 构建一个特殊的提示词 (Prompt)，强制模型：
+   - 不要说“我无法浏览”
+   - 不要产生幻觉
+   - 仅使用从工具获取的数据
 
-4. Generates the final answer.
-
----
-
-### **7️⃣ Final Response Returned to User**
-
-The user sees a clean, concise reply based on:
-
-- scraped data  
-- search data  
-- or direct knowledge  
+4. 生成最终答案。
 
 ---
 
-## ⚙️ Execution Loop (REPL)
+### **7️⃣ 返回给用户的最终响应**
 
-The REPL allows:
+用户会看到一个简洁、准确的回答，其依据是：
+
+- 抓取的数据
+- 搜索的数据
+- 或模型的直接知识
+
+---
+
+## ⚙️ 执行循环 (REPL)
+
+REPL 允许：
 
 ```
-> your question
-AI: response
-> next question
-AI: response
+> 你的问题
+AI: 回答内容
+> 下一个问题
+AI: 回答内容
 ```
 
-Real-time, continuous agent conversation.
+实现实时、连续的智能体对话。
 
 ---
 
-## 🎯 Why This Flow Is Production Ready
+## 🎯 为什么这个流程是生产就绪的
 
-- Combines **rule-based routing + LLM routing**
-- Uses **real browsing** (Puppeteer)
-- Uses **real search** (Tavily)
-- Has **Zod schema** for safe message structure
-- Has **error-safe paths** (NO_URL, SEARCH_ERROR)
-- Has **tool-first architecture**
+- 结合了 **基于规则的路由 + LLM 路由**
+- 使用 **真实搜索** (Tavily)
+- 拥有用于安全消息结构的 **Zod schema**
+- 拥有 **错误安全路径** (如针对无 URL 或搜索错误的处理)
+- 拥有 **工具优先的架构**
 
-This is how real agentic systems like:
+这就是现实中类似以下的智能体系统：
 
-- Perplexity  
-- WebPilot  
-- BrowserGPT  
-- Research Agents  
-- AutoGPT v2  
-- LangGraph official examples  
+- Perplexity
+- WebPilot
+- BrowserGPT
+- 研究类智能体 (Research Agents)
+- AutoGPT v2
+- LangGraph 官方示例
 
-are built.
+的构建方式。
 
 ---

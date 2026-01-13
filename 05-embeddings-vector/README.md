@@ -1,190 +1,190 @@
-# 📘 Lesson 05 — Embeddings & Vector Store Basics (The Foundation of RAG)
+# 📘 第05课 — 嵌入和向量存储基础 (RAG 的基石)
 
-This lesson introduces the FIRST major concept required for RAG (Retrieval-Augmented Generation):  
-**Embeddings + Vector Search.**
+本课程将介绍 RAG (Retrieval-Augmented Generation，检索增强生成) 所需的第一个主要概念：
+**嵌入 (Embeddings) + 向量搜索 (Vector Search)。**
 
-This is where we learn how to convert text into numerical vectors, store them, and perform similarity search.
+在这里，我们将学习如何将文本转换为数值向量，存储它们，并执行相似性搜索。
 
-It is one of the most important concepts in modern AI.
-
----
-
-# 🚀 What We Will Do in This Lesson (Flow Overview)
-
-1️⃣ Load the embedding model  
-2️⃣ Convert text into embeddings  
-3️⃣ Store embeddings inside a **vector store**  
-4️⃣ Perform a **similarity search**  
-5️⃣ Retrieve the most relevant documents  
-
-This is the exact foundation behind:
-
-- **ChatGPT memory**  
-- **AI search engines**  
-- **RAG chatbots**  
-- **Multi-agent knowledge retrieval**  
-- **Smart document answering systems**  
+这是现代 AI 中最重要的概念之一。
 
 ---
 
-# 🔁 Flow Diagram (Simple)
+# 🚀 本课将做什么 (流程概述)
+
+1️⃣ 加载嵌入模型
+2️⃣ 将文本转换为嵌入
+3️⃣ 将嵌入存储在**向量存储**中
+4️⃣ 执行**相似性搜索**
+5️⃣ 检索最相关的文档
+
+这正是以下技术的基础：
+
+- **ChatGPT 内存**
+- **AI 搜索引擎**
+- **RAG 聊天机器人**
+- **多智能体知识检索**
+- **智能文档问答系统**
+
+---
+
+# 🔁 流程图 (简化)
 
 ```
-Text Documents
+文本文档
         │
         ▼
- Embedding Model
-  (text → vector numbers)
+  嵌入模型
+   (文本 → 向量数字)
         │
         ▼
-  Vector Store
- (memory or database)
+   向量存储
+  (内存或数据库)
         │
         ▼
-User Query
+用户查询
         │
         ▼
-Query Embedding (vector)
+查询嵌入 (向量)
         │
         ▼
-Similarity Search (cosine distance)
+相似性搜索 (余弦距离)
         │
         ▼
-Top Matching Documents
+最匹配的文档
 ```
 
 ---
 
-# 🧠 Explanation of the Code in Logical Blocks
+# 🧠 代码按逻辑块解释
 
 ---
 
-## 🔹 **1. Setup + Import Required Components**
+## 🔹 **1. 设置 + 导入所需组件**
 
-This part loads:
+这部分加载：
 
-- dotenv  
-- Google Gemini embedding model  
-- In-memory vector store  
+- dotenv (环境变量)
+- Google Gemini 嵌入模型
+- 内存向量存储
 
-Purpose:  
-Prepare tools needed to embed text + store vectors.
-
----
-
-## 🔹 **2. Initialize the Embedding Model**
-
-You create an embedding generator using:
-
-- Gemini model: `"text-embedding-004"`  
-- Your API key from `.env`
-
-Purpose:  
-Convert text → numerical vectors (arrays of 768–1536 floating point numbers).
-
-Embeddings allow semantic understanding:  
-“Paresh age?” is similar to “Paresh is 20 years old.”
+目的：
+准备嵌入文本和存储向量所需的工具。
 
 ---
 
-## 🔹 **3. Create an In-Memory Vector Store**
+## 🔹 **2. 初始化嵌入模型**
 
-`MemoryVectorStore` stores all vectors inside RAM.
+您将使用以下内容创建嵌入生成器：
 
-Advantages:
+- Gemini 模型：`"text-embedding-004"`
+- 来自 `.env` 的 API 密钥
 
-- Fast  
-- No database required  
-- Perfect for learning & testing  
-- Works exactly like Pinecone / Qdrant but local  
+目的：
+将文本转换为数值向量（由 768-1536 个浮点数组成的数组）。
 
-This store enables similarity search based on vector distance.
-
----
-
-## 🔹 **4. Add Documents to the Vector Store**
-
-We insert multiple text documents like:
-
-- “Paresh is building an agentic AI backend…”  
-- “Paresh is 20 years old.”  
-
-When you add documents:
-
-1. It embeds each text  
-2. Stores all embeddings in vector store  
-3. Maintains internal mapping (doc → vector)
-
-Now the store knows the **semantic meaning** of every document.
+嵌入允许语义理解：
+“Paresh 的年龄？”与“Paresh 20 岁。”是相似的。
 
 ---
 
-## 🔹 **5. Perform a Similarity Search**
+## 🔹 **3. 创建内存向量存储**
 
-Query:
+`MemoryVectorStore` 将所有向量存储在 RAM 中。
+
+优点：
+
+- 快速
+- 无需数据库
+- 非常适合学习和测试
+- 功能与 Pinecone / Qdrant 完全相同，但运行在本地
+
+此存储允许基于向量距离进行相似性搜索。
+
+---
+
+## 🔹 **4. 将文档添加到向量存储**
+
+我们插入多个文本文档，例如：
+
+- “Paresh 正在构建一个智能体 AI 后端…”
+- “Paresh 20 岁。”
+
+当您添加文档时：
+
+1. 它会嵌入每个文本
+2. 将所有嵌入存储在向量存储中
+3. 维护内部映射 (文档 → 向量)
+
+现在存储知道每个文档的**语义含义**。
+
+---
+
+## 🔹 **5. 执行相似性搜索**
+
+查询：
 
 ```
-"user age ?"
+"用户年龄 ?"
 ```
 
-The steps behind the scenes:
+幕后步骤：
 
-1. Query gets embedded  
-2. Store compares the query vector with all stored vectors  
-3. Measures closeness (cosine similarity)  
-4. Returns top matching documents  
+1. 查询被嵌入
+2. 存储将查询向量与所有存储的向量进行比较
+3. 测量接近度（余弦相似度）
+4. 返回最匹配的文档
 
-You get results like:
+您将获得类似以下的结果：
 
-- (Probably) “Paresh is 20 years old.”  
-- (Maybe) Anything related to Paresh’s information  
+- (可能) “Paresh 20 岁。”
+- (可能) 任何与 Paresh 信息相关的内容
 
-This is **semantic search** — not keyword matching.
-
----
-
-# 🧩 Why This Lesson Is Important
-
-Embeddings are used in every advanced AI application:
-
-### ✔ RAG (Retrieval-Augmented Generation)
-Use vector search to give model the right context before answering.
-
-### ✔ Multi-Agent Systems
-Agents retrieve relevant memory before reasoning.
-
-### ✔ AI Search Engines  
-Search by meaning, not keywords.
-
-### ✔ Chatbot Memory  
-Store past messages as embeddings and find relevant history.
-
-### ✔ Document Question Answering  
-Attach PDFs, DOCs, websites — extract info semantically.
-
-This lesson is the **core** of everything that comes later.
+这是一种**语义搜索**——而非关键词匹配。
 
 ---
 
-# 🌍 Real-World Use Cases
+# 🧩 为什么本课很重要
 
-- “Give me notes about chapter 5” → semantic retrieval  
-- Chatbot that remembers previous user info  
-- AI that fetches facts before answering  
-- Retrieval pipelines used in OpenAI RAG tutorials  
-- E-commerce semantic search (“shoes under ₹2000 red running”)  
-- Resume matching  
-- FAQ answering bots  
+嵌入在每个高级 AI 应用中都有使用：
+
+### ✔ RAG (检索增强生成)
+在回答之前，使用向量搜索为模型提供正确的上下文。
+
+### ✔ 多智能体系统
+智能体在推理之前检索相关记忆。
+
+### ✔ AI 搜索引擎
+按含义搜索，而不是关键词。
+
+### ✔ 聊天机器人内存
+将过去的对话存储为嵌入，并查找相关的历史记录。
+
+### ✔ 文档问答
+附带 PDF、DOC、网站——语义提取信息。
+
+本课是以后所有内容**核心**。
 
 ---
 
-# ▶️ How to Run
+# 🌍 实际应用场景
+
+- “给我关于第五章的笔记” → 语义检索
+- 能够记住用户以前信息的聊天机器人
+- 在回答之前获取事实的 AI
+- OpenAI RAG 教程中使用的检索管道
+- 电子商务语义搜索（“2000 卢比以下的红色跑步鞋”）
+- 简历匹配
+- FAQ 问答机器人
+
+---
+
+# ▶️ 如何运行
 
 ```
 node 05-embeddings-vector.js
 ```
 
-Make sure your `.env` contains:
+请确保您的 `.env` 文件包含：
 
 ```
 GEMINI_API_KEY=your_api_key_here
@@ -192,6 +192,5 @@ GEMINI_API_KEY=your_api_key_here
 
 ---
 
-# ⭐ Next Chapter  
-**Lesson 06 — Basic RAG (Using embeddings + vector store + LLM to answer user queries).**
-
+# ⭐ 下一章
+**第06课 — 基本 RAG (使用嵌入 + 向量存储 + LLM 回答用户查询)。**

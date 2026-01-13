@@ -1,198 +1,207 @@
-# 📘 Lesson 02 — Building a Prompt → Model Pipe Chain
+# 📘 第 02 课 — 构建提示词 → 模型管道链
 
-This lesson teaches how to combine a **Prompt Template** and a **Model** into a single reusable pipeline using `.pipe()`.  
-This helps us build clean, modular, and scalable AI flows — without manually formatting and invoking the model every time.
-
----
-
-# 🚀 What We Are Doing in This Lesson (Flow Overview)
-
-In this chapter, we build a pipeline that works like this:
-
-1️⃣ **Load environment variables**  
-→ So our API keys become available.
-
-2️⃣ **Initialize the Gemini 2.0 Flash model**  
-→ This is the LLM that gives final answers.
-
-3️⃣ **Create a prompt template**  
-→ A structure like:  
-   `"explain me {topic} , like ELI5"`
-
-4️⃣ **Pipe the prompt into the model**  
-→ This automatically forms:  
-   `formatted prompt → model → response`
-
-5️⃣ **Call the chain with an input (`{topic: "ice cream"}`)**  
-→ LangChain internally formats the prompt and sends it to the LLM.
-
-6️⃣ **Print raw & clean content from the response**  
-→ Understand what the model returns.
-
-This single chain forms the foundation of more advanced pipelines like RAG, tools, and agents.
+本课将教您如何使用 `.pipe()` 将**提示模板 (Prompt Template)** 和**模型 (Model)** 组合成一个可重用的单一管道。这有助于我们构建清晰、模块化、可扩展的 AI 流程，而无需每次都手动格式化和调用模型。
 
 ---
 
-# 🔥 Full Flow Diagram
+# 🚀 本课将做什么 (流程概述)
+
+在本章中，我们将构建一个如下所示的管道：
+
+1️⃣ **加载环境变量**
+→ 使我们的 API 密钥可用。
+
+2️⃣ **初始化 Gemini 2.0 Flash 模型**
+→ 这是提供最终答案的 LLM。
+
+3️⃣ **创建一个提示模板**
+→ 例如：
+`"请像向一个5岁小孩解释一样，解释一下 {topic}"`
+
+4️⃣ **将提示词导入模型**
+→ 这会自动形成：
+`格式化后的提示 → 模型 → 响应`
+
+5️⃣ **使用输入 (`{topic: "冰淇淋"}`) 调用链**
+→ LangChain 在内部自动格式化提示并将其发送给 LLM。
+
+6️⃣ **从响应中打印原始和清理后的内容**
+→ 了解模型返回了什么。
+
+这个单一的链构成了更高级管道（如 RAG、工具和智能体）的基础。
+
+---
+
+# 🔥 完整流程图
 
 ```
-Input (topic: "ice cream")
+输入 (topic: "冰淇淋")
         │
         ▼
-PromptTemplate --- fills {topic} ---> "explain ice cream, like ELI5"
+PromptTemplate --- 填充 {topic} ---> "请像向一个5岁小孩解释一样，解释一下冰淇淋"
         │
         ▼
 Gemini 2.0 Flash LLM
         │
         ▼
-Final AI Response
+最终 AI 响应
 ```
 
-Everything between input → final response is handled automatically by `.pipe()`.
+从输入到最终响应之间的一切都由 `.pipe()` 自动处理。
 
 ---
 
-# 🧠 Code Explained in Logical Blocks
+# 🧠 代码按逻辑块解释
 
 ---
 
-## 🔹 **1. Setup: Load environment + import LangChain**
+## 🔹 **1. 设置：加载环境 + 导入 LangChain**
+
 ```js
-import {config} from "dotenv"
+import { config } from "dotenv";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
 
-config()
+config();
 ```
 
-### ✔ What this block does:
-- Loads `.env` file
-- Makes your API key available (`process.env.GEMINI_API_KEY`)
-- Imports the LangChain model and prompt classes
+### ✔ 此块的作用：
 
-Without this setup, nothing else works.
+- 加载 `.env` 文件
+- 使您的 API 密钥可用 (`process.env.GEMINI_API_KEY`)
+- 导入 LangChain 模型和提示类
+
+没有这个设置，其他一切都无法工作。
 
 ---
 
-## 🔹 **2. Create the Gemini Model**
+## 🔹 **2. 创建 Gemini 模型**
+
 ```js
 const model = new ChatGoogleGenerativeAI({
-    model:"gemini-2.0-flash",
-    apiKey:process.env.GEMINI_API_KEY
-})
+  model: "gemini-2.0-flash",
+  apiKey: process.env.GEMINI_API_KEY,
+});
 ```
 
-### ✔ Why this block exists:
-- Initializes Google Gemini 2.0 Flash model  
-- This model processes the final prompt  
-- It’s fast, cheap, and great for chain testing
+### ✔ 此块存在的原因：
 
-This is your **AI brain**.
+- 初始化 Google Gemini 2.0 Flash 模型
+- 此模型处理最终的提示
+- 它快速、便宜，非常适合链测试
+
+这就是您的 **AI 大脑**。
 
 ---
 
-## 🔹 **3. Create a Prompt Template**
+## 🔹 **3. 创建提示模板 (Prompt Template)**
+
 ```js
 const prompt = PromptTemplate.fromTemplate(`
-    explain me {topic} , like ELI5`
-)
+    请像向一个5岁小孩解释一样，解释一下 {topic}。`);
 ```
 
-### ✔ Why this block exists:
-- `{topic}` is a dynamic placeholder  
-- We can reuse this prompt for **any input topic**
-- No need to manually write strings for every call
+### ✔ 此块存在的原因：
 
-It makes your prompts **clean, reusable, maintainable**.
+- `{topic}` 是一个动态占位符
+- 我们可以将此提示重用于**任何输入主题**
+- 无需为每次调用手动编写字符串
+
+它使您的提示**清晰、可重用、可维护**。
 
 ---
 
-## 🔹 **4. Create a Pipe Chain (Prompt → Model)**
+## 🔹 **4. 创建管道链 (提示词 → 模型)**
+
 ```js
-const chain = prompt.pipe(model)
+const chain = prompt.pipe(model);
 ```
 
-### ✔ What this block does:
-`.pipe()` connects the prompt template to the model:
+### ✔ 此块的作用：
+
+`.pipe()` 将提示模板连接到模型：
 
 ```
-Input → PromptTemplate.format() → Model.invoke() → Response
+输入 → PromptTemplate.format() → Model.invoke() → 响应
 ```
 
-### ✔ Why this is powerful:
-- You don't need to call `.format()` manually  
-- No need to invoke the model manually  
-- LangChain handles everything internally  
-- Your chain becomes a single clean function
+### ✔ 为什么这很强大：
 
-This is how real AI pipelines are built.
+- 您无需手动调用 `.format()`
+- 无需手动调用模型
+- LangChain 在内部处理一切
+- 您的链变成了一个干净的单一函数
+
+这就是构建真实 AI 管道的方式。
 
 ---
 
-## 🔹 **5. Execute the chain**
+## 🔹 **5. 执行链**
+
 ```js
-const res = await chain.invoke({topic:"ice cream"})
+const res = await chain.invoke({ topic: "冰淇淋" });
 ```
 
-### ✔ Why this block exists:
-- You only pass **one object** to the entire pipeline
-- LangChain automatically:
-  1. Replaces `{topic}`  
-  2. Creates the final prompt  
-  3. Sends to Gemini  
-  4. Returns structured output
+### ✔ 此块存在的原因：
 
-Simplest possible pipeline execution.
+- 您只需将**一个对象**传递给整个管道
+- LangChain 自动：
+  1. 替换 `{topic}`
+  2. 创建最终提示
+  3. 发送给 Gemini
+  4. 返回结构化输出
+
+最简单的管道执行方式。
 
 ---
 
-## 🔹 **6. Print raw & cleaned output**
+## 🔹 **6. 打印原始和清理后的输出**
+
 ```js
-console.log("raw response", res)
-console.log("chain content response", res.content)
+console.log("原始响应", res);
+console.log("链内容响应", res.content);
 ```
 
-### ✔ Why this block is important:
-- `raw response` → shows full metadata  
-- `res.content` → clean text from the LLM
+### ✔ 此块的重要性：
 
-Understanding both is essential when building tools, agents, or RAG systems later.
+- `原始响应` → 显示完整的元数据
+- `res.content` → 来自 LLM 的纯文本
+
+在后续构建工具、智能体或 RAG 系统时，理解这两者至关重要。
 
 ---
 
-# 🔁 Full Code (Reference)
+# 🔁 完整代码 (参考)
 
 ```js
-import {config} from "dotenv"
+import { config } from "dotenv";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
 
-config()
+config();
 const model = new ChatGoogleGenerativeAI({
-    model:"gemini-2.0-flash",
-    apiKey:process.env.GEMINI_API_KEY
-})
+  model: "gemini-2.0-flash",
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 const prompt = PromptTemplate.fromTemplate(`
-    explain me {topic} , like ELI5`
-)
+    请像向一个5岁小孩解释一样，解释一下 {topic}。`);
 
-// Create chain: prompt -> model
-
-const chain = prompt.pipe(model)
+// 创建链：提示词 -> 模型
+const chain = prompt.pipe(model);
 // chain = (input) => model.invoke( prompt.format(input) )
 
-async function run(){
-    const res = await chain.invoke({topic:"ice cream"})
-    console.log("raw response", res)
-    console.log("chain content response", res.content)
+async function run() {
+  const res = await chain.invoke({ topic: "冰淇淋" });
+  console.log("原始响应", res);
+  console.log("链内容响应", res.content);
 }
-run().catch(console.error)
+run().catch(console.error);
 ```
 
 ---
 
-# ▶️ How to Run
+# ▶️ 如何运行
 
 ```
 node 02-pipe-basic.js
@@ -200,20 +209,20 @@ node 02-pipe-basic.js
 
 ---
 
-# 🌍 Real-World Use Cases
+# 🌍 实际应用场景
 
-- Reusable AI teaching template  
-- Chatbots with dynamic prompts  
-- Customer support FAQ explainers  
-- Educational apps  
-- AI writing assistants  
-- Multi-step LLM workflows  
-- Pipelines combining prompt → model → output parser  
+- 可重用的 AI 教学模板
+- 带有动态提示的聊天机器人
+- 客户支持常见问题解答解释器
+- 教育应用
+- AI 写作助手
+- 多步 LLM 工作流
+- 结合提示词 → 模型 → 输出解析器的管道
 
-`.pipe()` is used EVERYWHERE in advanced Agentic AI.
+在高级智能体 AI 中，`.pipe()` 被广泛使用。
 
 ---
 
-# ⭐ Next Chapter  
-Continue to **Lesson 03 — Output Parsers**.
+# ⭐ 下一章
 
+继续学习 **第 03 课 — 输出解析器 (Output Parsers)**。

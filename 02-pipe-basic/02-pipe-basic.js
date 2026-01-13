@@ -1,25 +1,47 @@
-import {config} from "dotenv"
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+// 导入 dotenv 库，用于加载 .env 文件中的环境变量
+import { config } from "dotenv";
+// 从 @langchain/google-genai 库导入 ChatGoogleGenerativeAI 类，用于与 Google 的 Gemini 模型进行聊天交互
+// import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatOpenAI } from "@langchain/openai";
+// 从 @langchain/core/prompts 库导入 PromptTemplate 类，用于创建可重用的提示模板
 import { PromptTemplate } from "@langchain/core/prompts";
 
-config()
-const model = new ChatGoogleGenerativeAI({
-    model:"gemini-2.0-flash",
-    apiKey:process.env.GEMINI_API_KEY
-})
+// 调用 config() 函数加载 .env 文件中的环境变量。
+// 这使得可以通过 process.env.VAR_NAME 访问 .env 文件中定义的环境变量。
+config();
 
+// 初始化 ChatOpenAI 模型实例
+const model = new ChatOpenAI({
+  // 指定要使用的模型名称，这里使用的是 OpenAI 的 GPT-4o-mini 版本，一个快速且适合聊天和推理的模型
+  model: "gpt-4o-mini",
+  // 从环境变量中获取 OpenAI API 密钥
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// 创建一个 PromptTemplate 实例
+// 这个模板包含一个占位符 {topic}，允许动态插入内容
 const prompt = PromptTemplate.fromTemplate(`
-    explain me {topic} , like ELI5`
-)
+    请像向一个5岁小孩解释一样，解释一下 {topic}。`);
 
-// Create chain: prompt -> model
-
-const chain = prompt.pipe(model)
+// 创建链：将提示模板与模型连接起来
+// .pipe() 方法将一个可运行对象（这里是 prompt）的输出作为另一个可运行对象（这里是 model）的输入
+const chain = prompt.pipe(model);
+// 链的内部工作原理大致相当于：
 // chain = (input) => model.invoke( prompt.format(input) )
+// 它自动处理提示的格式化和模型的调用
 
-async function run(){
-    const res = await chain.invoke({topic:"ice cream"}) // we did not use .format here , because pipe handles that internally
-    console.log("raw response", res)
-    console.log("chain content response", res.content)
+// 定义一个异步函数 run，用于执行整个流程
+async function run() {
+  // 调用链的 invoke 方法，并传入输入对象
+  // LangChain 会自动将 {topic: "冰淇淋"} 传递给 prompt.format() 进行格式化，
+  // 然后将格式化后的提示传递给 model.invoke()
+  const res = await chain.invoke({ topic: "冰淇淋" }); // 这里我们没有手动使用 .format，因为 pipe 内部会处理
+  // 打印原始的响应对象，其中包含完整的元数据
+  console.log("原始响应:", res);
+  // 打印从模型响应中提取的纯文本内容
+  console.log("链内容响应:", res.content);
 }
-run().catch(console.error)
+
+// 调用 run 函数开始执行，并使用 .catch 捕获可能发生的错误
+// 例如，如果缺少 API 密钥，将在此处捕获并打印错误
+run().catch(console.error);

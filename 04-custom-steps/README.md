@@ -1,220 +1,219 @@
-# 📘 Lesson 04 — Adding Custom Preprocessing Steps to Your Chain
+# 📘 第04课 — 在您的链中添加自定义预处理步骤
 
-In this lesson, we learn how to integrate **custom logic** into a LangChain pipeline before the LLM is executed.  
-This is extremely useful when you need to:
+在本课程中，我们将学习如何在 LLM 执行之前将**自定义逻辑**集成到 LangChain 管道中。
+这在您需要以下情况时非常有用：
 
-- Clean or normalize input  
-- Validate data  
-- Transform user queries  
-- Add metadata  
-- Prepare context  
-- Call extra functions/tools before the model runs  
+- 清理或规范化输入
+- 验证数据
+- 转换用户查询
+- 添加元数据
+- 准备上下文
+- 在模型运行之前调用额外的函数/工具
 
-This pattern is used heavily in real-world AI applications, especially in agents, chatbots, and APIs.
+这种模式在实际的 AI 应用中被大量使用，尤其是在代理 (agents)、聊天机器人和 API 中。
 
 ---
 
-# 🚀 What We Will Do in This Lesson (Flow Overview)
+# 🚀 本课将做什么 (流程概述)
 
-This chapter introduces a new concept:  
-👉 **A custom step that runs BEFORE prompt → model → parser.**
+本章将介绍一个新概念：
+👉 **在提示词 → 模型 → 解析器之前运行的自定义步骤。**
 
-Our flow becomes:
+我们的流程将变为：
 
 ```
-Input
+输入
   ↓
-Custom Preprocessing Step (normalize / validate / transform)
+自定义预处理步骤 (规范化 / 验证 / 转换)
   ↓
-PromptTemplate (fills {topic})
+提示模板 (填充 {topic})
   ↓
-Gemini LLM (generates answer)
+Gemini LLM (生成答案)
   ↓
-StringOutputParser (clean string output)
+StringOutputParser (干净的字符串输出)
   ↓
-Final text response
+最终文本响应
 ```
 
-This gives us **full control** over the input before it hits the LLM.
+这使我们在输入到达 LLM 之前对其拥有**完全控制权**。
 
 ---
 
-# 🧠 Why Custom Steps Matter
+# 🧠 为什么自定义步骤很重要
 
-Real projects require much more than just sending raw user text to a model.
+实际项目需要的不仅仅是将原始用户文本发送到模型。
 
-For example, you may need to:
+例如，您可能需要：
 
-- Trim bad whitespace  
-- Convert to lowercase  
-- Check if input is valid  
-- Add default values  
-- Sanitize user data  
-- Pre-process JSON  
-- Pre-extract keywords  
-- Call external tools (database, search API, etc.)  
-- Log inputs  
-- Modify state inside multi-agent workflows  
+- 删除多余的空格
+- 转换为小写
+- 检查输入是否有效
+- 添加默认值
+- 清理用户数据
+- 预处理 JSON
+- 预提取关键词
+- 调用外部工具 (数据库、搜索 API 等)
+- 记录输入
+- 在多代理工作流中修改状态
 
-This lesson shows the **foundation of how to do all of that.**
-
----
-
-# 🔧 Breakdown of Logical Blocks
+本课程展示了**如何完成所有这些任务的基础**。
 
 ---
 
-## 🔹 **1. Setup & Model + Prompt + Parser**
-
-We initialize:
-
-- the Gemini LLM  
-- the prompt  
-- the parser  
-
-This part is identical to previous lessons, but now the chain will be wrapped inside a custom function.
-
-Purpose of these components:
-
-- **PromptTemplate** → formats the question  
-- **Model** → generates output  
-- **Parser** → returns simple text  
-
-They are the core of the chain.
+# 🔧 逻辑块分解
 
 ---
 
-## 🔹 **2. Custom Preprocessing Step (The New Concept)**
+## 🔹 **1. 设置 & 模型 + 提示 + 解析器**
 
-Inside the `runChain()` function, we add:
+我们初始化：
 
-- extra logic  
-- transformations  
-- validation  
-- tools  
-- preprocessing  
+- Gemini LLM
+- 提示模板
+- 解析器
 
-Example used here:
+这部分与之前的课程相同，但现在链将被封装在一个自定义函数中。
 
-- Trim extra spaces  
-- Convert the topic to lowercase  
-- Spread input for flexibility  
+这些组件的目的：
 
-This acts as a **“middleware”** before the AI runs.
+- **PromptTemplate** → 格式化问题
+- **Model** → 生成输出
+- **Parser** → 返回简单的文本
+
+它们是链的核心。
 
 ---
 
-## 🔹 **3. Build + Invoke the Chain Dynamically**
+## 🔹 **2. 自定义预处理步骤 (新概念)**
 
-Instead of creating a chain once, we build it inside the function:
+在 `runChain()` 函数内部，我们添加：
+
+- 额外逻辑
+- 转换
+- 验证
+- 工具
+- 预处理
+
+这里使用的例子：
+
+- 删除多余的空格
+- 将主题转换为小写
+- 展开输入以实现灵活性
+
+这在 AI 运行之前充当**“中间件”**。
+
+---
+
+## 🔹 **3. 动态构建并调用链**
+
+我们不是只创建一次链，而是在函数内部构建它：
 
 ```
-prompt → model → parser
+提示 → 模型 → 解析器
 ```
 
-Then we call `.invoke()` with the **normalized** input.
+然后我们使用**规范化**后的输入调用 `.invoke()`。
 
-This pattern allows you to:
+这种模式允许您：
 
-- plug multiple tools  
-- add different models  
-- inject dynamic logic  
-- add state-aware preprocessing  
+- 插入多个工具
+- 添加不同的模型
+- 注入动态逻辑
+- 添加状态感知的预处理
 
-This structure is common in production agent systems.
-
----
-
-## 🔹 **4. Return the Final Clean Output**
-
-After the LLM runs, the parser gives you back a **pure string**, which is perfect for:
-
-- REST responses  
-- Socket.io responses  
-- UI output  
-- Database logs  
-
-Your final output is clean and ready to use.
+这种结构在生产环境的代理系统中很常见。
 
 ---
 
-# 🔁 Flow Diagram (Simplified)
+## 🔹 **4. 返回最终的干净输出**
+
+LLM 运行后，解析器会给您返回一个**纯字符串**，这非常适合：
+
+- REST 响应
+- Socket.io 响应
+- UI 输出
+- 数据库日志
+
+您的最终输出是干净且可以直接使用的。
+
+---
+
+# 🔁 流程图 (简化)
 
 ```
-          ┌─────────────────────────┐
-          │  User Input (topic)     │
-          └──────────────┬──────────┘
-                         ▼
-          ┌─────────────────────────┐
-          │ Custom Preprocessing     │
-          │ (trim, lowercase, etc.) │
-          └──────────────┬──────────┘
-                         ▼
-          ┌─────────────────────────┐
-          │ Prompt Template          │
-          └──────────────┬──────────┘
-                         ▼
-          ┌─────────────────────────┐
-          │ Gemini 2.0 Flash (LLM)  │
-          └──────────────┬──────────┘
-                         ▼
-          ┌─────────────────────────┐
-          │ String Output Parser     │
-          └──────────────┬──────────┘
-                         ▼
-          ┌─────────────────────────┐
-          │ Final Clean Text Output │
-          └─────────────────────────┘
+           ┌─────────────────────────┐
+           │  用户输入 (主题)        │
+           └──────────────┬──────────┘
+                          ▼
+           ┌─────────────────────────┐
+           │ 自定义预处理             │
+           │ (去空格, 小写等)        │
+           └──────────────┬──────────┘
+                          ▼
+           ┌─────────────────────────┐
+           │ 提示模板 (Prompt Template) │
+           └──────────────┬──────────┘
+                          ▼
+           ┌─────────────────────────┐
+           │ Gemini 2.0 Flash (LLM)  │
+           └──────────────┬──────────┘
+                          ▼
+           ┌─────────────────────────┐
+           │ 字符串输出解析器 (String Output Parser) │
+           └──────────────┬──────────┘
+                          ▼
+           ┌─────────────────────────┐
+           │ 最终干净文本输出        │
+           └─────────────────────────┘
 ```
 
 ---
 
-# 🌍 Real-World Use Cases
+# 🌍 实际应用场景
 
-This pattern is used in:
+这种模式用于：
 
-### ✔ AI Chatbots  
-Normalize user input before sending to LLM.
+### ✔ AI 聊天机器人
+在将用户输入发送到 LLM 之前对其进行规范化。
 
-### ✔ Agent Systems  
-Add search results, database values, or API data before generating answers.
+### ✔ 代理系统
+在生成答案之前添加搜索结果、数据库值或 API 数据。
 
-### ✔ RAG  
-Embed → retrieve → preprocess → send to prompt → LLM.
+### ✔ RAG
+嵌入 → 检索 → 预处理 → 发送给提示 → LLM。
 
-### ✔ AI Automations  
-Modify user query, add defaults, detect intent.
+### ✔ AI 自动化
+修改用户查询、添加默认值、检测意图。
 
-### ✔ APIs  
-Validate payload before processing.
+### ✔ API
+在处理之前验证有效负载。
 
-### ✔ Educational or explanation systems  
-Convert user text into a clean format before prompting.
-
----
-
-# ⭐ Why This Lesson Is Important
-
-You have now learned the **most important skill** for building real AI apps:
-
-### 🔥 How to add custom logic BEFORE the LLM.
-
-This is what separates “toy examples” from **production-grade AI pipelines**.
-
-Nearly every advanced feature you’ll build later depends on this:
-
-- Tools  
-- Agents  
-- Memory  
-- Multi-agent orchestration  
-- LangGraph nodes  
-- Context injection  
-- RAG retrieval  
-- Input validation  
-- Pre/post-processing  
+### ✔ 教育或解释系统
+在提示之前将用户文本转换为干净的格式。
 
 ---
 
-# ▶️ Next Chapter  
-**Lesson 05 — Embeddings & Vector Basics (Turning text into numbers for search + RAG).**
+# ⭐ 为什么本课很重要
 
+您现在已经学会了构建实际 AI 应用**最重要的技能**：
+
+### 🔥 如何在 LLM 之前添加自定义逻辑。
+
+这正是“玩具示例”与**生产级 AI 管道**的区别。
+
+您以后将构建的几乎所有高级功能都依赖于此：
+
+- 工具
+- 代理
+- 内存
+- 多代理编排
+- LangGraph 节点
+- 上下文注入
+- RAG 检索
+- 输入验证
+- 预处理/后处理
+
+---
+
+# ▶️ 下一章
+**第05课 — 嵌入和向量基础 (将文本转换为数字以进行搜索 + RAG)。**

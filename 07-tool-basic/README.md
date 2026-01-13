@@ -1,71 +1,72 @@
-# 📘 Lesson 07 — Tools Basics (Creating a Function the AI Can Use)
+# 📘 第07课 — 工具基础 (创建一个 AI 可以使用的函数)
 
-In this lesson, we learn the simplest and most important building block of Agents:
+在本课程中，我们将学习智能体 (Agents) 最简单也是最重要的构建块：
 
-👉 **A Tool**  
-A tool is just a function that LangChain (and the AI model) can call to perform some action.
+👉 **一个工具 (Tool)**
+工具只是一个函数，LangChain（和 AI 模型）可以调用它来执行某些操作。
 
-Before building real agents, automation, or browser bots — we must understand how to create a basic tool using **RunnableLambda**.
+在构建真正的智能体、自动化或浏览器机器人之前，我们必须了解如何使用 **RunnableLambda** 创建一个基本工具。
 
-This is the easiest place to start.
-
----
-
-# 🧠 What Is a Tool in LangChain?
-
-A **tool** is simply a function that performs a specific task, such as:
-
-- doing math  
-- searching online  
-- scraping websites  
-- querying a database  
-- reading files  
-- calling APIs  
-
-The LLM *cannot perform actions* by itself.
-
-Tools give it **superpowers**.
-
-This lesson explains the smallest, simplest tool possible → **an Add Tool (a + b)**.
+这是最容易入门的地方。
 
 ---
 
-# 🔥 Flow Overview (Matches Code Order)
+# 🧠 LangChain 中的工具是什么？
+
+**工具**只是一个执行特定任务的函数，例如：
+
+- 进行数学运算
+- 在线搜索
+- 抓取网站
+- 查询数据库
+- 读取文件
+- 调用 API
+- 等等
+
+LLM 本身*无法执行操作*。
+
+工具赋予它**超能力**。
+
+本课程解释了最简单、最基本的工具 → **一个加法工具 (a + b)**。
+
+---
+
+# 🔥 流程概述 (与代码顺序一致)
 
 ```
-Define Tool Function
-       ↓
-Wrap It in RunnableLambda
-       ↓
-Call the Tool Using .invoke()
-       ↓
-Get Final Output (a + b)
+定义工具函数
+        ↓
+将其包装在 RunnableLambda 中
+        ↓
+使用 .invoke() 调用工具
+        ↓
+获取最终输出 (a + b)
 ```
 
-Very simple, but essential.
+非常简单，但至关重要。
 
 ---
 
-# 🧩 Code Explanation (Block-by-Block in Exact Sequence)
+# 🧩 代码解释 (逐块按精确顺序)
 
 ---
 
-## 🔹 **BLOCK 1 — Import RunnableLambda**
+## 🔹 **BLOCK 1 — 导入 RunnableLambda**
 
 ```js
 import { RunnableLambda } from "@langchain/core/runnables";
 ```
 
-### ✔ Explanation:
-- `RunnableLambda` lets you convert ANY JavaScript function into a LangChain tool.
-- This is the foundation for tools used in Agents.
-- Later, LLMs will be able to automatically call such tools.
+### ✔ 解释：
+- `RunnableLambda` 允许您将**任何 JavaScript 函数**转换为 LangChain 工具。
+- 这是智能体中使用的工具的基础。
+- 稍后，LLM 将能够自动调用此类工具。
 
-Think of it as "wrapping your function into a LangChain-compatible format."
+可以将其视为“将您的函数包装成 LangChain 兼容的格式”。
 
 ---
 
-## 🔹 **BLOCK 2 — Define the Tool (Add Numbers)**
+## 🔹 **BLOCK 2 — 定义工具 (加法运算)**
 
 ```js
 const addTool = RunnableLambda.from((input) => {
@@ -74,103 +75,103 @@ const addTool = RunnableLambda.from((input) => {
 });
 ```
 
-### ✔ Explanation:
-This block creates a custom tool.
+### ✔ 解释：
+此块创建一个自定义工具。
 
-- It expects an object with `a` and `b`
-- Extracts these values
-- Returns their sum
+- 它期望一个包含 `a` 和 `b` 的对象
+- 提取这些值
+- 返回它们的和
 
-This becomes a callable tool in your chain/agent pipeline.
+这成为您链/智能体管道中的一个可调用工具。
 
-### 🔥 Why this matters:
-This is the SAME pattern used for:
+### 🔥 为什么这很重要：
+这与以下工具使用**相同**的模式：
 
-- Scraper tools  
-- Search tools  
-- File-read tools  
-- Database query tools  
-- Browser automation tools  
-- Even multi-step reasoning tools  
+- 抓取工具
+- 搜索工具
+- 文件读取工具
+- 数据库查询工具
+- 浏览器自动化工具
+- 甚至多步推理工具
 
-**Every tool starts like this.**
+**每个工具都以这种方式开始。**
 
 ---
 
-## 🔹 **BLOCK 3 — Run the Tool Using .invoke()**
+## 🔹 **BLOCK 3 — 使用 .invoke() 运行工具**
 
 ```js
 const result = await addTool.invoke({ a: 5, b: 7 });
 ```
 
-### ✔ Explanation:
-`.invoke()` runs the tool with provided input.
+### ✔ 解释：
+`.invoke()` 使用提供的输入运行工具。
 
-- You pass `{a:5, b:7}`
-- Tool runs your function
-- Returns `5 + 7 = 12`
+- 您传入 `{a:5, b:7}`
+- 工具运行您的函数
+- 返回 `5 + 7 = 12`
 
-### 💡 Why invoke?
-LangChain standardizes `.invoke()` for:
+### 💡 为什么使用 invoke？
+LangChain 标准化了 `.invoke()` 用于：
 
-- Chains
-- Models
-- Tools
-- Agents
-- Runnables
+- 链 (Chains)
+- 模型 (Models)
+- 工具 (Tools)
+- 智能体 (Agents)
+- 可运行对象 (Runnables)
 
-So every component uses the same API.
+因此，每个组件都使用相同的 API。
 
 ---
 
-## 🔹 **BLOCK 4 — Print Final Output**
+## 🔹 **BLOCK 4 — 打印最终输出**
 
 ```js
-console.log("RESULT:", result);
+console.log("结果:", result);
 ```
 
-### ✔ Explanation:
-Shows the output of the tool.  
-For this example, it will print:
+### ✔ 解释：
+显示工具的输出。
+对于此示例，它将打印：
 
 ```
-RESULT: 12
+结果: 12
 ```
 
-Very simple — but this is exactly how we build bigger tools later.
+非常简单——但这就是我们将来构建更大工具的方式。
 
 ---
 
-# 🌍 Why This Lesson Matters
+# 🌍 为什么本课很重要
 
-This is the **foundation** of real-world agent systems.
+这是实际智能体系统的**基础**。
 
-Tools allow an AI agent to:
+工具允许 AI 智能体：
 
-### ✔ Do math  
-### ✔ Search the internet  
-### ✔ Scrape websites  
-### ✔ Use APIs  
-### ✔ Interact with databases  
-### ✔ Control browsers  
-### ✔ Automate workflows  
+### ✔ 进行数学运算
+### ✔ 搜索互联网
+### ✔ 抓取网站
+### ✔ 使用 API
+### ✔ 与数据库交互
+### ✔ 控制浏览器
+### ✔ 自动化工作流
 
-Every “smart” AI system uses tools behind the scenes.
+每个“智能”AI 系统都在幕后使用工具。
 
-If you understand this small example,  
-you can build:
+如果您理解了这个小例子，
+您可以构建：
 
-- Perplexity-style multi-tool agents  
-- Web automation tools (Puppeteer)  
-- RAG tools  
-- Database query tools  
-- File parsing tools  
+- Perplexity 风格的多工具智能体
+- 网络自动化工具 (Puppeteer)
+- RAG 工具
+- 数据库查询工具
+- 文件解析工具
 
-This lesson starts that journey.
+本课开启了这段旅程。
 
 ---
 
-# ▶️ How to Run
+# ▶️ 如何运行
 
 ```
 node 07-tool-basic.js
@@ -178,6 +179,5 @@ node 07-tool-basic.js
 
 ---
 
-# ⭐ Next Chapter  
-**Lesson 08 — Web Scraper Tool (Using Puppeteer).**
-
+# ⭐ 下一章
+**第08课 — 网页抓取工具 (使用 Puppeteer)。**

@@ -1,181 +1,181 @@
-# 📘 Lesson 09 — Scrape + Summarize Pipeline (Tool → LLM Chain)
+# 📘 第09课 — 抓取 + 总结管道 (工具 → LLM 链)
 
-In this lesson, we combine everything learned so far:
+在本课程中，我们将结合迄今为止学到的所有知识：
 
-✔ Tools (RunnableLambda)  
-✔ Zod validation  
-✔ Web scraping  
-✔ Prompt templates  
-✔ LLM invocation  
-✔ String parsing  
-✔ Multi-step pipeline  
+✔ 工具 (RunnableLambda)
+✔ Zod 验证
+✔ 网页抓取
+✔ 提示模板
+✔ LLM 调用
+✔ 字符串解析
+✔ 多步骤管道
 
-We build a **real AI workflow:**
+我们将构建一个**真实的 AI 工作流**：
 
-➡️ **Step 1:** Scrape a website  
-➡️ **Step 2:** Clean HTML → extract readable text  
-➡️ **Step 3:** Pass extracted content into a summarization LLM  
-➡️ **Step 4:** Get a clean 5-bullet summary  
+➡️ **步骤 1：** 抓取一个网站
+➡️ **步骤 2：** 清理 HTML → 提取可读文本
+➡️ **步骤 3：** 将提取的内容传递给总结 LLM
+➡️ **步骤 4：** 获取一个干净的 5 点总结
 
-This is basically a **mini Perplexity-style research pipeline**.
-
----
-
-# 🚀 What This Lesson Does (Flow Overview)
-
-1️⃣ User gives a URL  
-2️⃣ We validate the URL using Zod  
-3️⃣ Fetch and scrape the website  
-4️⃣ Clean HTML → readable text  
-5️⃣ Pass text → Gemini LLM  
-6️⃣ Produce a helpful summary  
-7️⃣ Return final response  
-
-Perfect for:
-
-- SEO automation  
-- Research agents  
-- Web content summarization  
-- Perplexity-like multi-tool agents  
-- Browser automation flows  
-- Content analysis tools  
+这基本上是一个**迷你 Perplexity 风格的研究管道**。
 
 ---
 
-# 🔁 Visual Pipeline Diagram
+# 🚀 本课将做什么 (流程概述)
+
+1️⃣ 用户提供一个 URL
+2️⃣ 我们使用 Zod 验证 URL
+3️⃣ 获取并抓取网站
+4️⃣ 清理 HTML → 可读文本
+5️⃣ 将文本传递给 Gemini LLM
+6️⃣ 生成一个有用的总结
+7️⃣ 返回最终响应
+
+非常适合：
+
+- SEO 自动化
+- 研究智能体
+- 网页内容总结
+- Perplexity 风格的多工具智能体
+- 浏览器自动化流程
+- 内容分析工具
+
+---
+
+# 🔁 可视化管道图
 
 ```
 URL
  ↓
-Zod Validation
+Zod 验证
  ↓
-Fetch HTML
+获取 HTML
  ↓
-Clean Text
+清理文本
  ↓
-Inject into Prompt
+注入到提示中
  ↓
-Gemini LLM Summary
+Gemini LLM 总结
  ↓
-Final Bullet-Point Output
+最终项目符号输出
 ```
 
 ---
 
-# 🧩 **Code Explanation (Block-by-Block in Exact Sequence)**
+# 🧩 **代码解释 (逐块按精确顺序)**
 
 ---
 
-## 🔹 BLOCK 1 — Imports + dotenv Setup
+## 🔹 BLOCK 1 — 导入 + dotenv 设置
 
-Loads:
+加载：
 
-- RunnableLambda  
-- Gemini LLM  
-- PromptTemplate  
-- Parser  
-- Zod for validation  
-- Environment variables  
+- RunnableLambda
+- Gemini LLM
+- PromptTemplate
+- 解析器 (Parser)
+- Zod 用于验证
+- 环境变量
 
-Purpose: prepare for tool + LLM chain.
-
----
-
-## 🔹 BLOCK 2 — Scraper Tool (with Input Validation)
-
-### What it does:
-- Ensures the input contains a valid `url`
-- Fetches the webpage
-- Removes `<script>`, `<style>`, and HTML tags
-- Extracts only clean readable text
-- Limits text to 3000 characters (keeps LLM fast & cheap)
-- Returns `{ success, content }`
-
-### Why this block matters:
-This transforms a **raw website** into **LLM-ready text**.  
-This is EXACTLY how Perplexity fetches website data.
+目的：为工具 + LLM 链做准备。
 
 ---
 
-## 🔹 BLOCK 3 — Initialize LLM (Gemini Flash)
+## 🔹 BLOCK 2 — 抓取工具 (带输入验证)
 
-### What it does:
-Creates the AI brain which will generate the summary.
+### 它的作用：
+- 确保输入包含一个有效的 `url`
+- 获取网页内容
+- 移除 `<script>`、`<style>` 和 HTML 标签
+- 仅提取干净的可读文本
+- 将文本限制为 3000 个字符 (保持 LLM 快速且经济)
+- 返回 `{ success, content }`
 
-### Why:
-We need a smart model to understand and compress website content.
-
----
-
-## 🔹 BLOCK 4 — Create the Summary Prompt
-
-The prompt instructs the model to:
-
-- Use simple English  
-- Produce 5 bullet points  
-- Explain what the website does  
-- Explain who the website is for  
-
-### Why:
-This shapes the final answer into a structured, readable output.
+### 为什么此块很重要：
+这会将**原始网站**转换为**LLM 可用的文本**。
+这正是 Perplexity 获取网站数据的方式。
 
 ---
 
-## 🔹 BLOCK 5 — Create Summary LLM Chain
+## 🔹 BLOCK 3 — 初始化 LLM (Gemini Flash)
 
-Pipeline:
+### 它的作用：
+创建将生成摘要的 AI 大脑。
+
+### 为什么：
+我们需要一个智能模型来理解和压缩网站内容。
+
+---
+
+## 🔹 BLOCK 4 — 创建摘要提示
+
+提示指示模型：
+
+- 使用简单的英语
+- 生成 5 个要点
+- 解释网站的作用
+- 解释网站的目标受众
+
+### 为什么：
+这会将最终答案塑造成结构化、可读的输出。
+
+---
+
+## 🔹 BLOCK 5 — 创建摘要 LLM 链
+
+管道：
 
 ```
-prompt → model → string parser
+prompt → model → 字符串解析器
 ```
 
-### What it does:
-Takes `{content}` and returns **plain text summary**.
+### 它的作用：
+接收 `{content}` 并返回**纯文本摘要**。
 
-### Why:
-Makes summarization automatic and reusable.
+### 为什么：
+使摘要自动化且可重用。
 
 ---
 
-## 🔹 BLOCK 6 — Main Function: Full Pipeline Execution
+## 🔹 BLOCK 6 — 主函数：完整管道执行
 
-This block runs the entire chain:
+此块运行整个链：
 
-1. Calls the scrape tool  
-2. Handles errors  
-3. Sends scraped text to the LLM  
-4. Prints final summary  
+1. 调用抓取工具
+2. 处理错误
+3. 将抓取到的文本发送给 LLM
+4. 打印最终摘要
 
-### Why:
-This is a fully working multi-step AI workflow.
-
----
-
-# 📌 Expected Output (Example)
-
-Your final summary will look like:
-
-```
-📌 FINAL SUMMARY:
-
-• Sheryians is an online coding and design education platform.
-• It offers courses in MERN, Python, UI/UX, AI, and DevOps.
-• It targets beginners and students aiming to enter tech fields.
-• The website focuses on practical, industry-ready training.
-• Provides hands-on projects, mentorship, and career guidance.
-```
-
-(The exact content will differ depending on website updates.)
+### 为什么：
+这是一个完整的多步骤 AI 工作流。
 
 ---
 
-# ▶️ How to Run
+# 📌 预期输出 (示例)
+
+您的最终摘要将如下所示：
+
+```
+📌 最终摘要:
+
+• Sheryians 是一个在线编程和设计教育平台。
+• 它提供 MERN、Python、UI/UX、AI 和 DevOps 课程。
+• 它面向希望进入技术领域的初学者和学生。
+• 该网站专注于实用的、行业就绪的培训。
+• 提供动手项目、指导和职业指导。
+```
+
+(确切内容将因网站更新而异。)
+
+---
+
+# ▶️ 如何运行
 
 ```
 node 09-tool-llm.js
 ```
 
-Make sure your `.env` contains:
+确保您的 `.env` 文件包含：
 
 ```
 GEMINI_API_KEY=your_gemini_key_here
@@ -183,30 +183,29 @@ GEMINI_API_KEY=your_gemini_key_here
 
 ---
 
-# 🌍 Real-World Applications of This Lesson
+# 🌍 此课程的实际应用
 
-This pipeline is the foundation of:
+此管道是以下功能的基础：
 
-### ✔ Web Research Agents  
-Scrape → summarize → answer questions.
+### ✔ 网页研究智能体
+抓取 → 总结 → 回答问题。
 
-### ✔ SEO Automation Tools  
-Extract site content → generate summaries → detect keywords.
+### ✔ SEO 自动化工具
+提取站点内容 → 生成摘要 → 检测关键词。
 
-### ✔ Competitor Research  
-Summarize competitor websites automatically.
+### ✔ 竞争对手研究
+自动总结竞争对手网站。
 
-### ✔ QA / Analysis Tools  
-Extract and analyze website copy.
+### ✔ QA / 分析工具
+提取和分析网站内容。
 
-### ✔ Perplexity-like multi-tool systems  
-Scrape → understand → generate insights.
+### ✔ Perplexity 风格的多工具系统
+抓取 → 理解 → 生成洞察。
 
-### ✔ Browser Automation Agents  
-Combine with Puppeteer for JS-rendered pages.
+### ✔ 浏览器自动化智能体
+与 Puppeteer 结合使用，用于 JS 渲染页面。
 
 ---
 
-# ⭐ Next Chapter  
-**Lesson 10 — Agent Demo: LLM decides WHEN to call the Tool.**
-
+# ⭐ 下一章
+**第10课 — 智能体演示：LLM 决定何时调用工具。**

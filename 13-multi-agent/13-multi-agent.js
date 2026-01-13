@@ -1,223 +1,150 @@
+// 导入 dotenv 库，用于加载 .env 文件中的环境变量
 import { config } from "dotenv";
 config();
 
 import readline from "readline";
 import { ChatOpenAI } from "@langchain/openai";
-import { StateGraph, START, END } from "@langchain/langgraph";
+import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { MessagesAnnotation, StateGraph, START, END } from "@langchain/langgraph";
+import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { scrapeReact } from "./scrape.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
 
 if (!OPENAI_API_KEY) {
-  console.error("ERROR: Set OPENAI_API_KEY in .env");
+  console.error("错误: 请在 .env 文件中设置 OPENAI_API_KEY");
   process.exit(1);
 }
 if (!TAVILY_API_KEY) {
-  console.warn("WARNING: TAVILY_API_KEY not set — search will be disabled.");
+  console.warn("警告: 未设置 TAVILY_API_KEY — 搜索功能将禁用。");
 }
 
-// ------------------ Model ------------------
+// ------------------ 定义工具 ------------------
+// 1️⃣ 网页抓取工具
+const scrapeTool = tool(
+  async ({ url }) => {
+    console.log(`\n🔧 正在抓取: ${url}`);
+    const content = await scrapeReact(url);
+    console.log(`✅ 抓取完成，内容长度: ${content.length}`);
+    console.log(`📄 内容预览: ${content.slice(0, 30000)}...`);
+    return content;
+  },
+  {
+    name: "scrape_website",
+    description: "抓取指定 URL 的网页内容。当用户提供网址并要求获取或总结网页内容时使用此工具。",
+    schema: z.object({
+      url: z.string().url().describe("要抓取的网页 URL"),
+    }),
+  }
+);
+
+// 2️⃣ 搜索工具
+const searchTool = tool(
+  async ({ query }) => {
+    console.log(`\n🔍 正在搜索: ${query}`);
+    if (!TAVILY_API_KEY) return "搜索功能未启用，请设置 TAVILY_API_KEY";
+    try {
+      const res = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          api_key: TAVILY_API_KEY,
+          query,
+          search_depth: "advanced",
+          include_answer: true,
+        }),
+      });
+      const json = await res.json();
+      console.log(`✅ 搜索完成`);
+      return JSON.stringify(json);
+    } catch (err) {
+      return `搜索错误: ${err.message}`;
+    }
+  },
+  {
+    name: "web_search",
+    description:
+      "搜索网络获取最新信息。当用户询问近期事件、最新价格、当前新闻等需要实时信息时使用此工具。",
+    schema: z.object({
+      query: z.string().describe("搜索查询关键词"),
+    }),
+  }
+);
+
+const tools = [scrapeTool, searchTool];
+
+// ------------------ 模型初始化并绑定工具 ------------------
 const model = new ChatOpenAI({
   model: "gpt-4o-mini",
   temperature: 0,
   apiKey: OPENAI_API_KEY,
-  // you can add streaming or other settings later
-});
+}).bindTools(tools);
 
-// ------------------ State schema (Zod) ------------------
-const MessageSchema = z.object({
-  role: z.enum(["user", "assistant", "system"]),
-  content: z.string(),
-});
+// ------------------ 创建工具节点 ------------------
+const toolNode = new ToolNode(tools);
 
-const State = z.object({
-  messages: z.array(MessageSchema),
-});
-
-// ------------------ Utilities ------------------
-function findLastUserMessage(state) {
-  return [...state.messages].reverse().find((m) => m.role === "user");
+// ------------------ 调用模型节点 ------------------
+async function callModel(state) {
+  const response = await model.invoke(state.messages);
+  return { messages: [response] };
 }
 
-// Tavily search wrapper
-async function tavilySearch(query) {
-  if (!TAVILY_API_KEY) return "NO_TAVILY_KEY";
-  try {
-    const res = await fetch("https://api.tavily.com/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        api_key: TAVILY_API_KEY,
-        query,
-        search_depth: "advanced",
-        include_answer: true,
-      }),
-      // timeout handling omitted for brevity
-    });
-    const json = await res.json();
-    return JSON.stringify(json);
-  } catch (err) {
-    return "SEARCH_ERROR_" + (err.message || String(err));
+// ------------------ 判断是否需要调用工具 ------------------
+function shouldContinue(state) {
+  const lastMessage = state.messages.at(-1);
+  if (lastMessage.tool_calls?.length > 0) {
+    return "tools";
   }
+  return END;
 }
 
-// ------------------ NODE: PLAN (hard router + LLM fallback) ------------------
-async function planNode(state) {
-  const userMsg = findLastUserMessage(state)?.content || "";
-
-  // HARD router: if any URL exists -> SCRAPE (no LLM decision)
-  if (userMsg.match(/https?:\/\/\S+/i)) {
-    return {
-      messages: [
-        ...state.messages,
-        { role: "system", content: "PLAN=scrape" },
-      ],
-    };
-  }
-
-  // else use small LLM decision for search vs answer -- but keep directive strict
-  const decisionResp = await model.invoke([
-    {
-      role: "system",
-      content: `
-You are a STRICT router. Output ONLY one word: "search" or "answer".
-If the user explicitly requests recent/up-to-date facts, prices, or "today", "now", "current", etc., output "search".
-Otherwise output "answer".
-Do NOT explain, do NOT return anything else.
-`.trim(),
-    },
-    ...state.messages,
-  ]);
-
-  const d = (decisionResp.content || "").toLowerCase().trim();
-  const plan = d.includes("search") ? "search" : "answer";
-
-  return {
-    messages: [
-      ...state.messages,
-      { role: "system", content: `PLAN=${plan}` },
-    ],
-  };
-}
-
-// ------------------ NODE: SCRAPE ------------------
-async function scrapeNode(state) {
-  const userMsg = findLastUserMessage(state)?.content || "";
-  const urlMatch = userMsg.match(/https?:\/\/\S+/i);
-  const url = urlMatch ? urlMatch[0] : null;
-  if (!url) {
-    return {
-      messages: [
-        ...state.messages,
-        { role: "system", content: "SCRAPED=NO_URL_PROVIDED" },
-      ],
-    };
-  }
-
-  // call puppeteer scraper
-  const scraped = await scrapeReact(url);
-  return {
-    messages: [
-      ...state.messages,
-      { role: "system", content: `SCRAPED=${scraped}` },
-    ],
-  };
-}
-
-// ------------------ NODE: SEARCH ------------------
-async function searchNode(state) {
-  const userMsg = findLastUserMessage(state)?.content || "";
-  const q = userMsg || "";
-  const result = await tavilySearch(q);
-  return {
-    messages: [
-      ...state.messages,
-      { role: "system", content: `SEARCHED=${result}` },
-    ],
-  };
-}
-
-// ------------------ NODE: ANSWER ------------------
-async function answerNode(state) {
-  const scrapedEntry = state.messages.find((m) =>
-    m.content?.startsWith("SCRAPED=")
-  );
-  const searchedEntry = state.messages.find((m) =>
-    m.content?.startsWith("SEARCHED=")
-  );
-  const userMsg = findLastUserMessage(state)?.content || "";
-
-  // IMPORTANT: force the LLM not to refuse. Emphasize that the scraping/search has already happened.
-  const prompt = `
-IMPORTANT INSTRUCTIONS:
-- Do NOT say "I cannot browse" or "I cannot scrape".
-- The web scraping / search has already been performed by backend tools. Use that data.
-- Use only the provided Scraped and Searched content for web facts.
-- If Scraped / Searched is NO_URL or SEARCH_ERROR_*, handle gracefully and tell the user.
-
-User: ${userMsg}
-
-Scraped: ${scrapedEntry ? scrapedEntry.content.replace(/^SCRAPED=/, "") : "NONE"}
-Searched: ${searchedEntry ? searchedEntry.content.replace(/^SEARCHED=/, "") : "NONE"}
-
-Give a concise final answer for the user. Use the scraped/searched data when available.
-`;
-
-  const out = await model.invoke([{ role: "user", content: prompt }]);
-  return {
-    messages: [
-      ...state.messages,
-      { role: "assistant", content: out.content },
-    ],
-  };
-}
-
-// ------------------ Graph build ------------------
-const graph = new StateGraph(State)
-  .addNode("plan", planNode)
-  .addNode("scrape", scrapeNode)
-  .addNode("search", searchNode)
-  .addNode("answer", answerNode);
-
-graph.addEdge(START, "plan");
-
-graph.addConditionalEdges("plan", (state) => {
-  const txt = state.messages.at(-1)?.content || "";
-  if (txt.includes("PLAN=scrape")) return "scrape";
-  if (txt.includes("PLAN=search")) return "search";
-  return "answer";
-});
-
-graph.addEdge("scrape", "answer");
-graph.addEdge("search", "answer");
-graph.addEdge("answer", END);
+// ------------------ 构建图 ------------------
+const graph = new StateGraph(MessagesAnnotation)
+  .addNode("agent", callModel)
+  .addNode("tools", toolNode)
+  .addEdge(START, "agent")
+  .addConditionalEdges("agent", shouldContinue, ["tools", END])
+  .addEdge("tools", "agent");
 
 const agent = graph.compile();
 
-// ------------------ REPL / interactive ------------------
+// ------------------ REPL / 交互式命令行 ------------------
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
   terminal: true,
 });
 
-console.log("\nMultiAgent V3 REPL ready. Type a question (or 'exit'):\n");
+console.log("\nMultiAgent REPL 就绪。请输入问题（或 'exit' 退出）：\n");
 
 async function askAgent(text) {
-  const initialState = {
-    messages: [
-      { role: "user", content: text },
-    ],
-  };
-
   try {
-    const result = await agent.invoke(initialState);
-    const final = result.messages.at(-1)?.content || "No response";
+    const result = await agent.invoke({
+      messages: [{ role: "user", content: text }],
+    });
+
+    // 调试：打印所有消息
+    console.log("\n📋 消息流:");
+    result.messages.forEach((m, i) => {
+      const role = m.constructor?.name || m.role || "unknown";
+      const hasToolCalls = m.tool_calls?.length > 0;
+      const content =
+        typeof m.content === "string"
+          ? m.content.slice(0, 100)
+          : JSON.stringify(m.content)?.slice(0, 100);
+      console.log(
+        `  [${i}] ${role}: ${content}${content?.length >= 100 ? "..." : ""} ${
+          hasToolCalls ? `(tool_calls: ${m.tool_calls.length})` : ""
+        }`
+      );
+    });
+
+    const final = result.messages.at(-1)?.content || "无响应";
     console.log("\nAI:", final, "\n");
   } catch (err) {
-    console.error("Agent error:", err);
+    console.error("智能体错误:", err);
   }
 }
 

@@ -1,104 +1,104 @@
-# 📘 Lesson 10 — Your First AI Agent (Without Tools)
+# 📘 第10课 — 您的第一个 AI 智能体 (不带工具)
 
-This lesson introduces the **simplest possible AI Agent** using LangChain’s `createAgent()`.
+本课程介绍使用 LangChain 的 `createAgent()` 创建**最简单的 AI 智能体**。
 
-Before adding tools (web search, scraper, calculator, puppeteer, etc.),  
-you must understand:
+在添加工具（网络搜索、抓取器、计算器、Puppeteer 等）之前，
+您必须了解：
 
-✔ What an Agent is  
-✔ How it runs  
-✔ How it responds  
-✔ How messages work  
-✔ How to invoke it  
+✔ 什么是智能体 (Agent)
+✔ 它是如何运行的
+✔ 它是如何响应的
+✔ 消息是如何工作的
+✔ 如何调用它
 
-This lesson teaches the **core mental model** of Agents.
+本课程教授智能体的**核心思维模型**。
 
 ---
 
-# 🧠 What Is an Agent?
+# 🧠 什么是智能体 (Agent)？
 
-An **Agent** = an AI model + the ability to reason step-by-step and decide what to do.
+**智能体** = 一个 AI 模型 + 逐步推理并决定做什么的能力。
 
-Normal LLM:
-
-```
-Input → Output
-```
-
-Agent:
+普通 LLM：
 
 ```
-Input
+输入 → 输出
+```
+
+智能体：
+
+```
+输入
   ↓
-Think (planning)
+思考 (规划)
   ↓
-Tools? (no tools yet)
+工具？(目前没有工具)
   ↓
-Respond
+响应
 ```
 
-Even without tools, agents:
+即使没有工具，智能体：
 
-- maintain message history  
-- reason step-by-step  
-- respond like a chatbot  
-- follow rules you give them  
-- prepare for tool usage in future lessons  
+- 维护消息历史
+- 逐步推理
+- 像聊天机器人一样响应
+- 遵循您给定的规则
+- 为未来课程的工具使用做准备
 
-This lesson builds the smallest working agent.
+本课程将构建最小的可工作的智能体。
 
 ---
 
-# 🔥 Flow Overview (Matches Code Order)
+# 🔥 流程概述 (与代码顺序一致)
 
 ```
-Load API Keys
-      ↓
-Initialize ChatOpenAI (GPT-4o-mini)
-      ↓
-Create Agent (no tools)
-      ↓
-Invoke agent with messages
-      ↓
-Agent generates final response
+加载 API 密钥
+       ↓
+初始化 ChatOpenAI (GPT-4o-mini)
+       ↓
+创建智能体 (无工具)
+       ↓
+使用消息调用智能体
+       ↓
+智能体生成最终响应
 ```
 
 ---
 
-# 🧩 **Code Explanation (Block-by-Block in Exact Sequence)**
+# 🧩 **代码解释 (逐块按精确顺序)**
 
 ---
 
-## 🔹 BLOCK 1 — Load Environment Variables
+## 🔹 BLOCK 1 — 加载环境变量
 
 ```js
 import { config } from "dotenv";
 config();
 ```
 
-### ✔ Explanation:
-Loads your `.env` file so your OpenAI API key becomes available.
+### ✔ 解释：
+加载您的 `.env` 文件，以便您的 OpenAI API 密钥可用。
 
-Every Agent requires API access.
+每个智能体都需要 API 访问。
 
 ---
 
-## 🔹 BLOCK 2 — Import ChatOpenAI + createAgent
+## 🔹 BLOCK 2 — 导入 ChatOpenAI + createAgent
 
 ```js
 import { ChatOpenAI } from "@langchain/openai";
 import { createAgent } from "langchain";
 ```
 
-### ✔ Explanation:
-- `ChatOpenAI` → LLM used by the agent  
-- `createAgent` → function that builds the agent class  
+### ✔ 解释：
+- `ChatOpenAI` → 智能体使用的 LLM
+- `createAgent` → 构建智能体类的函数
 
-Agents cannot run without a model.
+没有模型，智能体无法运行。
 
 ---
 
-## 🔹 BLOCK 3 — Initialize the LLM Model
+## 🔹 BLOCK 3 — 初始化 LLM 模型
 
 ```js
 const model = new ChatOpenAI({
@@ -107,15 +107,15 @@ const model = new ChatOpenAI({
 });
 ```
 
-### ✔ Explanation:
-- `gpt-4o-mini` → lightweight, fast, cheap model  
-- `temperature: 0` → deterministic responses (no randomness)  
+### ✔ 解释：
+- `gpt-4o-mini` → 轻量级、快速、廉价的模型
+- `temperature: 0` → 确定性响应（无随机性）
 
-This model is the **brain of the agent**.
+这个模型是**智能体的大脑**。
 
 ---
 
-## 🔹 BLOCK 4 — Create the Agent (with NO tools)
+## 🔹 BLOCK 4 — 创建智能体 (无工具)
 
 ```js
 const agent = createAgent({
@@ -124,79 +124,81 @@ const agent = createAgent({
 });
 ```
 
-### ✔ Explanation:
-You create your first agent.
+### ✔ 解释：
+您创建了第一个智能体。
 
-- No tools added yet  
-- Acts like a normal LLM, but wrapped inside an agent interface  
-- Can handle multi-turn messages  
-- Can be extended later with tools (search, scraping, browser, etc.)
+- 尚未添加工具
+- 行为类似于普通 LLM，但包装在智能体接口中
+- 可以处理多轮消息
+- 将来可以使用工具（搜索、抓取、浏览器等）进行扩展
 
-This is the **foundation** of all tool-powered agents.
+这是所有工具驱动智能体的**基础**。
 
 ---
 
-## 🔹 BLOCK 5 — Invoke the Agent
+## 🔹 BLOCK 5 — 调用智能体
 
 ```js
 const result = await agent.invoke({
   messages: [
-    { role: "user", content: "Hello agent, who are you?" }
+    { role: "user", content: "你好智能体，你是谁？" }
   ]
 });
 ```
 
-### ✔ Explanation:
-You send a **message array** — same structure used in ChatGPT API.
+### ✔ 解释：
+您发送一个**消息数组**——与 ChatGPT API 中使用的结构相同。
 
-- The agent processes the message  
-- Generates a response  
-- Stores conversation internally  
-- Prepares for future messages  
+- 智能体处理消息
+- 生成响应
+- 内部存储对话
+- 为未来消息做准备
 
-Even without tools, this behaves like a chatbot.
+即使没有工具，这行为也像一个聊天机器人。
 
 ---
 
-## 🔹 BLOCK 6 — Print Final Agent Response
+## 🔹 BLOCK 6 — 打印最终智能体响应
 
 ```js
 console.log(result.messages.at(-1).content);
 ```
 
-### ✔ Explanation:
-- `result.messages` = full conversation  
-- `.at(-1)` = the last message (the agent’s answer)  
-- `.content` = the actual text  
+### ✔ 解释：
+- `result.messages` = 完整对话
+- `.at(-1)` = 最后一条消息 (智能体的答案)
+- `.content` = 实际文本
 
-This prints something like:
+这会打印类似以下内容：
 
 ```
-Hello! I am an AI agent powered by GPT-4o-mini.
+你好！我是一个由 GPT-4o-mini 驱动的 AI 智能体。
 ```
 
 ---
 
-# 📌 Expected Output (Example)
+# 📌 预期输出 (示例)
+
+您的最终摘要将如下所示：
 
 ```
-=== AGENT RESPONSE ===
+=== 智能体响应 ===
 
-Hello! I am an AI agent powered by GPT-4o-mini. 
-How can I assist you today?
+你好！我是一个由 GPT-4o-mini 驱动的 AI 智能体。
+今天我能为您提供什么帮助？
 ```
 
-(The exact wording may vary slightly.)
+(确切措辞可能略有不同。)
 
 ---
 
-# ▶️ How to Run
+# ▶️ 如何运行
 
 ```
 node 10-agent-demo-scrape.js
 ```
 
-Make sure your `.env` includes:
+确保您的 `.env` 文件包含：
 
 ```
 OPENAI_API_KEY=your_key_here
@@ -204,26 +206,25 @@ OPENAI_API_KEY=your_key_here
 
 ---
 
-# 🌍 Why This Lesson Matters
+# 🌍 为什么本课很重要
 
-This small agent prepares you for:
+这个小智能体为您准备了：
 
-### ✔ Tool use  
-(search, scraping, db, browser)
+### ✔ 工具使用
+(搜索、抓取、数据库、浏览器)
 
-### ✔ Multi-step planning  
-(agent decides what to do next)
+### ✔ 多步骤规划
+(智能体决定下一步做什么)
 
-### ✔ Multi-agent systems  
-(supervisor → worker agents)
+### ✔ 多智能体系统
+(主管 → 工作智能体)
 
-### ✔ LangGraph  
-(workflows with state)
+### ✔ LangGraph
+(有状态的工作流)
 
-Every real agent application starts with **this basic structure**.
+每个真实的智能体应用程序都从**这个基本结构**开始。
 
 ---
 
-# ⭐ Next Chapter  
-**Lesson 11 — Agent With Tools (Scraper + LLM Summarizer).**
-
+# ⭐ 下一章
+**第11课 — 带工具的智能体 (抓取器 + LLM 总结器)。**

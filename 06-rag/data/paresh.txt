@@ -1,0 +1,3 @@
+Paresh 正在使用 LangChain 构建一个智能体 AI 后端。
+他希望通过构建 RAG、智能体和电子商务 AI 应用达到 15 LPA 的目标。
+Paresh 今年 20 岁。

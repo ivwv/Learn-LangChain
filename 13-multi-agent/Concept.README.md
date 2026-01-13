@@ -1,223 +1,195 @@
-# 🚀 Understanding Lessons 11, 12, and 13 — Full Agentic Evolution
+# 🚀 理解第 11、12 和 13 课 —— 智能体完整演进之路
 
-This section explains exactly what Lesson **11 → 12 → 13** mean,  
-how they evolve, how they differ, what problem each solves,  
-and answers every beginner doubt (nodes vs agents, routing, scraping, etc.).
+本节将详细解释 **第 11 → 12 → 13 课** 的含义、它们是如何演进的、它们之间有何不同、每个阶段解决了什么问题，并解答初学者的常见疑问（节点与智能体、路由、抓取等）。
 
-Use this section to understand the "big picture" of agent development.
+通过阅读本节，你可以从“全局视角”理解智能体开发。
 
 ---
 
-# 🔥 MASTER TABLE — Lesson 11 vs Lesson 12 vs Lesson 13
+# 🔥 大师级对比表 —— 第 11 课 vs 第 12 课 vs 第 13 课
 
-| Lesson | Name | Difficulty | What It Actually Does | When to Use It | Router Logic | Tools Used | Scraping Quality | Search? | Extra Files | Packages Required |
+| 课程 | 名称 | 难度 | 实际功能 | 何时使用 | 路由逻辑 | 使用的工具 | 抓取质量 | 是否有搜索？ | 额外文件 | 所需包 |
 |--------|------|------------|------------------------|----------------|--------------|-------------|-------------------|----------|--------------|-------------------|
-| **11** | Basic LangGraph Agent | ⭐ Easy | Straight, linear pipeline: DECIDE → SCRAPE → SUMMARIZE | Learning LangGraph basics | ❌ No routing | ❌ None | Simple regex | ❌ No | None | LangGraph, OpenAI |
-| **12** | Multi-Agent Planner System | ⭐⭐ Medium | Planner decides: **search / scrape / summarize**, tools executed accordingly | Learning multi-agent logic | ✔️ LLM Planner (`PLAN=...`) | ✔️ Fake search + scraper | Simple regex | ✔️ Fake | None | LangGraph, OpenAI |
-| **13** | PRO Agent (Production Level) | ⭐⭐⭐⭐ Advanced | Real router + Tavily search + Puppeteer scraping + REPL chat loop | Building real-world agents like Perplexity | ✔️ Hard router + LLM router | ✔️ Tavily + Puppeteer | 🚀 Full browser scrape | ✔️ Real | `scrape.js` | LangGraph, OpenAI, Puppeteer, Zod, Tavily |
+| **11** | 基础 LangGraph 智能体 | ⭐ 简单 | 直线、线性管道：决策 → 抓取 → 总结 | 学习 LangGraph 基础知识 | ❌ 无路由 | ❌ 无 | 简单的正则表达式 | ❌ 否 | 无 | LangGraph, OpenAI |
+| **12** | 多智能体规划系统 | ⭐⭐ 中等 | 规划器决定：**搜索 / 抓取 / 总结**，并相应执行工具 | 学习多智能体逻辑 | ✔️ LLM 规划器 (`PLAN=...`) | ✔️ 模拟搜索 + 抓取器 | 简单的正则表达式 | ✔️ 模拟 | 无 | LangGraph, OpenAI |
+| **13** | 专业级智能体 (生产级) | ⭐⭐⭐⭐ 高级 | 真实路由 + Tavily 搜索 + 高效抓取 + REPL 聊天循环 | 构建类似 Perplexity 的真实应用 | ✔️ 硬路由 + LLM 路由 | ✔️ Tavily + Scrape工具 | 🚀 网页内容抓取 | ✔️ 真实 | `scrape.js` | LangGraph, OpenAI, Zod, Tavily |
 
 ---
 
-# 🟩 EASY EXPLANATION — What Each Lesson Actually Does
+# 🟩 易于理解的解释 —— 每节课究竟在做什么
 
-### 🍏 Lesson 11 — “Baby Agent”  
-A simple, linear LangGraph workflow. No tools, no branching, no planning.  
-Just a fixed path:
+### 🍏 第 11 课 —— “入门智能体”
+一个简单的线性 LangGraph 工作流。没有工具，没有分支，没有规划。
+只有一条固定路径：
 
 ```
-user → decide → scrape → summarize → output
+用户 → 决策 → 抓取 → 总结 → 输出
 ```
 
-Good for learning:  
-- What is a “Node”?  
-- What is “State”?  
-- How edges connect nodes.
+适合学习：
+- 什么是“节点 (Node)”？
+- 什么是“状态 (State)”？
+- 边 (Edges) 如何连接节点。
 
 ---
 
-### 🍊 Lesson 12 — “Multi-Agent System Begins”  
-Introduces a **Planner Agent**.  
-The Planner reads user input and decides which tool to use:
+### 🍊 第 12 课 —— “开启多智能体系统”
+引入了 **规划智能体 (Planner Agent)**。
+规划器读取用户输入并决定使用哪个工具：
 
 ```
-PLAN = scrape / search / summarize
+PLAN = 抓取 / 搜索 / 总结
 ```
 
-Then the graph routes accordingly.
+然后图会根据决策进行路由。
 
-Good for learning:  
-- LLM-based routing  
-- Multi-tool agent design  
-- Agent communication  
-- Simple toolchain flows
+适合学习：
+- 基于 LLM 的路由
+- 多工具智能体设计
+- 智能体间的通信
+- 简单的工具链流程
 
-You now have **multiple agents**, each with a role:
-- Planner Agent  
-- Scraper Agent  
-- Search Agent  
-- Summarizer Agent  
+你现在拥有了**多个智能体**，每个都有特定的角色：
+- 规划智能体 (Planner Agent)
+- 抓取智能体 (Scraper Agent)
+- 搜索智能体 (Search Agent)
+- 总结智能体 (Summarizer Agent)
 
 ---
 
-### 🍇 Lesson 13 — “Production-Grade Agent (Like Perplexity)”  
-This is the *real thing*:
+### 🍇 第 13 课 —— “生产级智能体 (类似 Perplexity)”
+这是*真正的实战*：
 
-✔ Real browser scraping using **Puppeteer**  
-✔ Real internet search using **Tavily**  
-✔ Strict routing (LLM + rule-based)  
-✔ Zod-based State schema  
-✔ REPL interface (interactive chat in terminal)  
-✔ Error-proof input handling  
-✔ Smart fallback logic  
-✔ Large text handling (60,000 characters)  
-✔ Realistic AI pipeline design  
+✔️ 真实网络搜索，使用 **Tavily**
+✔️ 严格的路由 (LLM + 基于规则)
+✔️ 基于 **Zod** 的状态 Schema (状态模式)
+✔️ **REPL** 界面 (终端交互式聊天)
+✔️ 错误防护的输入处理
+✔️ 智能回退逻辑
+✔️ 大文本处理能力
+✔️ 真实的 AI 管道设计
 
-Flow:
+流程：
 
 ```
-START
+开始 (START)
   ↓
-PLAN (Hard router + LLM router)
+规划 (PLAN) (硬路由 + LLM 路由)
   ↓
-(scrape or search or answer)
+(抓取、搜索或直接回答)
   ↓
-ANSWER (uses scraped/searched data)
+回答 (ANSWER) (利用抓取/搜索到的数据)
   ↓
-END
+结束 (END)
 ```
 
-This is a **true Agentic AI OS**.  
-Exactly how real agent frameworks work.
+这是一个**真正的智能体 AI 系统**。
+这正是现实中智能体框架的工作方式。
 
 ---
 
-# 🧠 FAQ — Kill Every Doubt
+# 🧠 常见问题解答 —— 消除疑惑
 
-### ❓ Are "Nodes" and "Agents" the same?
+### ❓ “节点 (Nodes)”和“智能体 (Agents)”是一回事吗？
 
-**Short answer:**  
-✔ A *Node* becomes an *Agent* when it performs an autonomous task.
+**简短回答：**
+✔️ 当一个 *节点* 执行自主任务时，它就变成了一个 *智能体*。
 
-**Long answer:**  
-- A **Node** is just a step/function in the graph.  
-- If that node has "intelligence" (using LLM / search / scrape),  
-  it effectively behaves like an **Agent**.
+**详细回答：**
+- **节点** 只是图中的一个步骤或函数。
+- 如果该节点具有“智能”（使用 LLM / 搜索 / 抓取），它实际上就表现得像一个 **智能体**。
 
-So in your architecture:
+在你的架构中：
 
-| Node Name | Behaves As |
+| 节点名称 | 表现为 |
 |-----------|-------------|
-| planNode | Supervisor Agent |
-| scrapeNode | Scraper Agent |
-| searchNode | Search Agent |
-| summarize/answer Node | Final Response Agent |
+| planNode | 主管智能体 (Supervisor Agent) |
+| scrapeNode | 抓取智能体 (Scraper Agent) |
+| searchNode | 搜索智能体 (Search Agent) |
+| summarize/answer Node | 最终响应智能体 |
 
-Thus, **Nodes = Agents with a single responsibility**.
+因此，**节点 = 承担单一职责的智能体**。
 
 ---
 
-### ❓ Why Lesson 13 uses more packages?
+### ❓ 为什么第 13 课使用了更多的包？
 
-Because it is the first “real” agent:
+因为它是一个“真实”的智能体：
 
-| Feature | Needs |
+| 功能 | 需求 |
 |---------|--------|
-| Real scraping | puppeteer |
-| Real search | Tavily API |
-| Input validation | zod |
-| Advanced graph | langgraph |
-| LLM | openai |
-| Environment vars | dotenv |
+| 真实抓取 | fetch / scrape.js |
+| 真实搜索 | Tavily API |
+| 输入验证 | zod |
+| 高级图构建 | langgraph |
+| 大语言模型 | openai |
+| 环境变量 | dotenv |
 
-This is how actual production AI agents are built.
+这就是构建实际生产级 AI 智能体的方式。
 
 ---
 
-### ❓ What is the difference between LLM routing and hard routing?
+### ❓ LLM 路由和硬路由有什么区别？
 
-#### ✔ Hard Routing → deterministic  
+#### ✔ 硬路由 → 确定性的
 ```
-If message contains URL → go to SCRAPE
-```
-
-#### ✔ LLM Routing → intelligent  
-```
-Does user want real-time data? → search
-Else → answer
+如果消息包含 URL → 进入抓取 (SCRAPE) 节点
 ```
 
-Lesson 13 uses **both** for accuracy and safety.
+#### ✔ LLM 路由 → 智能的
+```
+用户是否想要实时数据？→ 进入搜索 (search)
+否则 → 进入回答 (answer)
+```
+
+第 13 课同时使用了这两者，以确保准确性和安全性。
 
 ---
 
-### ❓ Why do we need Zod in Lesson 13?
+### ❓ 为什么第 13 课需要 Zod？
 
-Because real agents need:
+因为真实的智能体需要：
 
-- strict message structure  
-- type-safe state  
-- protection against invalid data  
-- predictable behavior  
+- 严格的消息结构
+- 类型安全的状态
+- 防止无效数据
+- 可预测的行为
 
-Without Zod, agents can break.
-
----
-
-### ❓ Why is Puppeteer scraping better than regex scraping?
-
-Regex scraping (Lesson 11 + 12):
-
-- Fails on React/Next.js sites  
-- Misses dynamic content  
-- Misses text inside components  
-- Fails when JavaScript loads content  
-
-Puppeteer scraping (Lesson 13):
-
-- Loads full DOM  
-- Executes JavaScript  
-- Extracts dynamic content  
-- Handles real websites (YouTube, Vercel, Zomato, etc.)
-
-This is **real browser automation**, same as:
-
-- BrowserGPT  
-- WebPilot  
-- AI Browsers  
+没有 Zod，智能体可能会在处理复杂状态时崩溃。
 
 ---
 
-### ❓ Why does Lesson 13 include a REPL?
+### ❓ 第 13 课为什么包含 REPL？
 
-Because real agents are not "run once" scripts.
+因为真实的智能体不是“运行一次”就结束的脚本。
 
-They need:
+它们需要：
 
-- continuous conversation  
-- persistence  
-- input → reasoning → tools → answer  
-- natural chat-like interaction  
+- 持续的对话
+- 持久性
+- 输入 → 推理 → 工具 → 回答 的循环
+- 自然的类聊天交互
 
-This is how tools like Perplexity's agent or Gemini’s agent work.
-
----
-
-### ❓ Which lesson should beginners start with?
-
-- Start with **Lesson 11**  
-- Understand branching with **Lesson 12**  
-- Build real-world agent with **Lesson 13**
+这就是 Perplexity 或 Gemini 智能体等工具的工作方式。
 
 ---
 
-# 🏁 Final Summary
+### ❓ 初学者应该从哪一课开始？
 
-| Lesson | Skill You Gain |
+- 从 **第 11 课** 开始
+- 通过 **第 12 课** 理解分支逻辑
+- 使用 **第 13 课** 构建真实的智能体
+
+---
+
+# 🏁 最终总结
+
+| 课程 | 你将获得的技能 |
 |--------|----------------|
-| **11** | Learn LangGraph basics (nodes + edges + state) |
-| **12** | Learn how multi-agent planning works |
-| **13** | Build a production agent with real scraping + real search + real routing |
+| **11** | 学习 LangGraph 基础知识（节点 + 边 + 状态） |
+| **12** | 学习多智能体规划的工作原理 |
+| **13** | 使用真实抓取 + 真实搜索 + 真实路由构建生产级智能体 |
 
-Lesson 13 is the REAL DEAL — the first time your agent becomes **usable in real projects**, not just demos.
+第 13 课是真正的跨越 —— 你的智能体将首次变得**可用于实际项目**，而不仅仅是演示。
 
 ---

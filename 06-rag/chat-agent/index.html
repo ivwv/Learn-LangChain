@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 知识库助手 (Stream)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Element Plus -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <script src="https://unpkg.com/element-plus"></script>
+    <!-- Marked.js 用于渲染 Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      [v-cloak] {
+        display: none;
+      }
+      .chat-container {
+        height: calc(100vh - 200px);
+      }
+      .message-user {
+        background-color: #e9f5ff;
+      }
+      .message-ai {
+        background-color: #f4f4f5;
+      }
+      /* Markdown 样式微调 */
+      .markdown-body ul {
+        list-style-type: disc;
+        margin-left: 1.5em;
+      }
+      .markdown-body ol {
+        list-style-type: decimal;
+        margin-left: 1.5em;
+      }
+      .markdown-body p {
+        margin-bottom: 0.5em;
+      }
+      .cursor-blink {
+        animation: blink 1s infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 font-sans">
+    <div id="app" v-cloak class="max-w-4xl mx-auto p-4 md:p-8">
+      <el-card class="shadow-lg border-0 rounded-xl overflow-hidden">
+        <template #header>
+          <div class="flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-600 flex items-center">
+              <span class="mr-2">⚡</span> 实时流式 RAG 助手
+            </h1>
+            <el-button size="small" @click="clearHistory" type="danger" plain>清空对话</el-button>
+          </div>
+        </template>
+
+        <!-- 聊天区域 -->
+        <div ref="chatBox" class="chat-container overflow-y-auto p-4 space-y-4">
+          <div
+            v-for="(msg, index) in messages"
+            :key="index"
+            :class="['p-4 rounded-lg max-w-[90%]', msg.role === 'user' ? 'ml-auto message-user' : 'mr-auto message-ai']"
+          >
+            <div class="font-bold mb-1 text-sm text-gray-500">
+              {{ msg.role === 'user' ? '你' : 'AI 助手' }}
+            </div>
+
+            <!-- 消息内容 (支持 Markdown) -->
+            <div
+              class="whitespace-pre-wrap leading-relaxed text-gray-800 markdown-body"
+              v-html="renderMarkdown(msg.content)"
+            ></div>
+
+            <!-- 光标效果 (正在输入时显示) -->
+            <span
+              v-if="msg.role === 'assistant' && msg.isStreaming"
+              class="inline-block w-2 h-4 bg-blue-500 ml-1 align-middle cursor-blink"
+            ></span>
+
+            <!-- 来源展示 -->
+            <div
+              v-if="msg.sources && msg.sources.length"
+              class="mt-3 pt-2 border-t border-gray-200 text-xs text-gray-400"
+            >
+              <div class="font-bold mb-1">🔍 引用来源:</div>
+              <div v-for="src in msg.sources" :key="src">📍 {{ src }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="mt-4 p-4 border-t border-gray-100">
+          <el-input
+            v-model="userInput"
+            type="textarea"
+            :rows="3"
+            placeholder="输入问题，体验流式回复..."
+            @keydown.enter.prevent="handleEnter"
+            :disabled="loading"
+          ></el-input>
+          <div class="mt-3 flex justify-end">
+            <el-button type="primary" :loading="loading" @click="sendMessage" class="px-8">
+              {{ loading ? '生成中...' : '发送' }}
+            </el-button>
+          </div>
+        </div>
+      </el-card>
+    </div>
+
+    <script>
+      const { createApp, ref, nextTick } = Vue;
+      const { ElMessage } = ElementPlus;
+
+      createApp({
+        setup() {
+          const userInput = ref("");
+          const loading = ref(false);
+          const messages = ref([
+            {
+              role: "assistant",
+              content: "你好！我是流式 RAG 助手，请问有什么可以帮你的？",
+              sources: [],
+            },
+          ]);
+          const sessionId = ref("session_" + Math.random().toString(36).substr(2, 9));
+          const chatBox = ref(null);
+
+          const scrollToBottom = async () => {
+            await nextTick();
+            if (chatBox.value) {
+              chatBox.value.scrollTop = chatBox.value.scrollHeight;
+            }
+          };
+
+          // 简单的 Markdown 渲染 wrapper
+          const renderMarkdown = (text) => {
+            return marked.parse(text || "");
+          };
+
+          const sendMessage = async () => {
+            if (!userInput.value.trim() || loading.value) return;
+
+            const question = userInput.value;
+            // 添加用户消息
+            messages.value.push({ role: "user", content: question });
+            userInput.value = "";
+            loading.value = true;
+            await scrollToBottom();
+
+            // 预先添加 AI 的空消息，用于流式填充
+            const aiMessageIndex =
+              messages.value.push({
+                role: "assistant",
+                content: "",
+                sources: [],
+                isStreaming: true,
+              }) - 1;
+
+            try {
+              const response = await fetch("http://localhost:3000/api/chat/stream", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  sessionId: sessionId.value,
+                  question: question,
+                }),
+              });
+
+              if (!response.ok) throw new Error(response.statusText);
+
+              // 获取流读取器
+              const reader = response.body.getReader();
+              const decoder = new TextDecoder();
+              let buffer = "";
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+
+                // 处理 SSE 格式数据 (data: {...}\n\n)
+                const lines = buffer.split("\n\n");
+                // 保留最后一个可能不完整的片段
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                  if (line.startsWith("data: ")) {
+                    const jsonStr = line.slice(6); // 去掉 'data: '
+                    try {
+                      const event = JSON.parse(jsonStr);
+
+                      if (event.error) {
+                        throw new Error(event.error);
+                      }
+
+                      // 根据事件类型更新 UI
+                      if (event.type === "sources") {
+                        messages.value[aiMessageIndex].sources = event.data;
+                      } else if (event.type === "content") {
+                        messages.value[aiMessageIndex].content += event.data;
+                        await scrollToBottom(); // 实时滚动
+                      } else if (event.type === "done") {
+                        messages.value[aiMessageIndex].isStreaming = false;
+                      }
+                    } catch (e) {
+                      console.error("JSON Parse Error", e);
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.error(error);
+              ElMessage.error("连接断开或出错");
+              messages.value[aiMessageIndex].content += "\n[出错: 连接已中断]";
+            } finally {
+              loading.value = false;
+              messages.value[aiMessageIndex].isStreaming = false;
+              await scrollToBottom();
+            }
+          };
+
+          const handleEnter = (e) => {
+            if (!e.shiftKey) {
+              sendMessage();
+            }
+          };
+
+          const clearHistory = () => {
+            messages.value = [{ role: "assistant", content: "对话已重置。" }];
+            sessionId.value = "session_" + Math.random().toString(36).substr(2, 9);
+          };
+
+          return {
+            userInput,
+            loading,
+            messages,
+            chatBox,
+            sendMessage,
+            handleEnter,
+            clearHistory,
+            renderMarkdown,
+          };
+        },
+      })
+        .use(ElementPlus)
+        .mount("#app");
+    </script>
+  </body>
+</html>

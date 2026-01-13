@@ -1,49 +1,49 @@
-# 📘 Lesson 12 — Multi-Agent System (Planner → Scrape/Search → Summarize)
+# 📘 第12课 — 多智能体系统 (规划器 → 抓取/搜索 → 总结)
 
-This lesson teaches how to build your **first multi-agent system** using LangGraph.
+本课程将教您如何使用 LangGraph 构建**您的第一个多智能体系统**。
 
-You will create:
+您将创建：
 
-1️⃣ A **PLANNER AGENT** → decides which tool to use  
-2️⃣ A **SCRAPER AGENT** → fetches website text  
-3️⃣ A **SEARCH AGENT** → returns fake search data  
-4️⃣ A **SUMMARIZER AGENT** → creates the final answer  
+1️⃣ 一个**规划器智能体 (PLANNER AGENT)** → 决定使用哪个工具
+2️⃣ 一个**抓取器智能体 (SCRAPER AGENT)** → 获取网站文本
+3️⃣ 一个**搜索智能体 (SEARCH AGENT)** → 返回虚假搜索数据
+4️⃣ 一个**总结器智能体 (SUMMARIZER AGENT)** → 生成最终答案
 
-This is EXACTLY how large agentic systems work:
+这与大型智能体系统的工作方式**完全一致**：
 
-- Perplexity  
-- Devin / OpenDevin  
-- AutoGPT  
-- CrewAI  
-- LangGraph agents  
+- Perplexity
+- Devin / OpenDevin
+- AutoGPT
+- CrewAI
+- LangGraph 智能体
 
-Each “agent” = one node, one responsibility.
+每个“智能体” = 一个节点，一个责任。
 
 ---
 
-# 🔥 Full Flow Diagram (Matches Code)
+# 🔥 完整流程图 (与代码匹配)
 
 ```
-START
+开始
   ↓
-[ PLAN ]
+[ 规划 ]
   ↓
  ┌──────────────┬──────────────┐
  ↓              ↓              ↓
-SCRAPE       SEARCH       SUMMARIZE (direct)
+抓取            搜索           总结 (直接)
   ↓              ↓
-       SUMMARIZE
-            ↓
-           END
+        总结
+             ↓
+            结束
 ```
 
 ---
 
-# 🧩 BLOCK-BY-BLOCK EXPLANATION (WITH CODE)
+# 🧩 逐块解释代码 (带代码)
 
 ---
 
-## 🔹 BLOCK 1 — dotenv Setup & Imports
+## 🔹 BLOCK 1 — dotenv 设置 & 导入
 
 ```js
 import { config } from "dotenv";
@@ -58,14 +58,14 @@ import {
 } from "@langchain/langgraph";
 ```
 
-### ✔ Explanation  
-- Loads environment variables  
-- Imports **GPT-4o-mini** and all LangGraph components  
-- These are mandatory for multi-node agent workflows  
+### ✔ 解释
+- 加载环境变量
+- 导入 **GPT-4o-mini** 和所有 LangGraph 组件
+- 这些是多节点智能体工作流的必需品
 
 ---
 
-## 🔹 BLOCK 2 — The Model (LLM for Planner + Summary)
+## 🔹 BLOCK 2 — 模型 (用于规划器 + 总结的 LLM)
 
 ```js
 const model = new ChatOpenAI({
@@ -74,33 +74,33 @@ const model = new ChatOpenAI({
 });
 ```
 
-### ✔ Explanation  
-- Fast & predictable model  
-- Used for **planning decisions** and **summary generation**  
-- Temperature 0 = no randomness  
+### ✔ 解释
+- 快速且可预测的模型
+- 用于**规划决策**和**摘要生成**
+- 温度 0 = 无随机性
 
 ---
 
-## 🔹 BLOCK 3 — FAKE SEARCH TOOL (Demo Only)
+## 🔹 BLOCK 3 — 虚假搜索工具 (仅限演示)
 
 ```js
 async function fakeSearch(query) {
   return `Search results for: ${query}
-1) Google 2023 revenue was $307B.
-2) Alphabet grew 9%.
-(FAKE DEMO DATA)
+1) Google 2023 收入为 $307B。
+2) Alphabet 增长了 9%。
+(虚假演示数据)
 `;
 }
 ```
 
-### ✔ Explanation  
-- Pretend search engine  
-- In real agent: replace with Tavily, Bing, SerpAPI, etc.  
-- Helps the Planner choose **search** when user asks factual queries  
+### ✔ 解释
+- 模拟搜索引擎
+- 在真实的智能体中：替换为 Tavily、Bing、SerpAPI 等
+- 当用户询问事实性查询时，帮助规划器选择**搜索**
 
 ---
 
-## 🔹 BLOCK 4 — SCRAPER TOOL
+## 🔹 BLOCK 4 — 抓取工具
 
 ```js
 async function scrapeWebsite(url) {
@@ -109,22 +109,22 @@ async function scrapeWebsite(url) {
     const html = await res.text();
     return html.replace(/<[^>]+>/g, " ").trim().slice(0, 1500);
   } catch {
-    return "Error scraping";
+    return "抓取错误";
   }
 }
 ```
 
-### ✔ Explanation  
-- Fetch URL  
-- Remove HTML tags  
-- Clean text  
-- Limit to 1500 chars  
-- Used when Planner chooses `"scrape"`  
+### ✔ 解释
+- 获取 URL
+- 移除 HTML 标签
+- 清理文本
+- 限制为 1500 个字符
+- 当规划器选择 `"scrape"` 时使用
 
 ---
 
-## 🔹 BLOCK 5 — NODE 1: PLANNER AGENT  
-Decides which tool to use: **scrape | search | math | summarize**
+## 🔹 BLOCK 5 — 节点 1: 规划器智能体 (PLANNER AGENT)
+决定使用哪个工具：**抓取 | 搜索 | 数学 | 总结**
 
 ```js
 async function plannerNode(state) {
@@ -132,7 +132,7 @@ async function plannerNode(state) {
     {
       role: "system",
       content:
-        "You are a tool-decider. Output ONLY one of these words: scrape, search, math, summarize.",
+        "你是一个工具决策者。只输出以下单词之一：scrape, search, math, summarize。",
     },
     ...state.messages,
   ]);
@@ -148,19 +148,19 @@ async function plannerNode(state) {
 }
 ```
 
-### ✔ Explanation  
-- Takes the user message  
-- LLM decides the required action  
-- Stores the plan as:  
+### ✔ 解释
+- 获取用户消息
+- LLM 决定所需的操作
+- 将计划存储为：
   ```
   PLAN=search
-  ```  
+  ```
 
-This is the **Supervisor Agent**.
+这是**主管智能体 (Supervisor Agent)**。
 
 ---
 
-## 🔹 BLOCK 6 — NODE 2: SCRAPE AGENT
+## 🔹 BLOCK 6 — 节点 2: 抓取智能体 (SCRAPE AGENT)
 
 ```js
 async function scrapeNode(state) {
@@ -178,14 +178,14 @@ async function scrapeNode(state) {
 }
 ```
 
-### ✔ Explanation  
-- Extracts URL from last message  
-- Calls scraper tool  
-- Saves scraped text to state  
+### ✔ 解释
+- 从最后一条消息中提取 URL
+- 调用抓取工具
+- 将抓取到的文本保存到状态中
 
 ---
 
-## 🔹 BLOCK 7 — NODE 3: SEARCH AGENT
+## 🔹 BLOCK 7 — 节点 3: 搜索智能体 (SEARCH AGENT)
 
 ```js
 async function searchNode(state) {
@@ -201,16 +201,16 @@ async function searchNode(state) {
 }
 ```
 
-### ✔ Explanation  
-- Takes **original user query**  
-- Runs fake search  
-- Saves search results  
-- Very similar to Perplexity’s search tool  
+### ✔ 解释
+- 获取**原始用户查询**
+- 运行虚假搜索
+- 保存搜索结果
+- 与 Perplexity 的搜索工具非常相似
 
 ---
 
-## 🔹 BLOCK 8 — NODE 4: SUMMARIZER AGENT  
-Combines final tool output into clean summary.
+## 🔹 BLOCK 8 — 节点 4: 总结器智能体 (SUMMARIZER AGENT)
+将最终工具输出组合成简洁的摘要。
 
 ```js
 async function summarizeNode(state) {
@@ -219,7 +219,7 @@ async function summarizeNode(state) {
   )?.content.replace("SCRAPED=", "").replace("SEARCHED=", "");
 
   const summary = await model.invoke([
-    { role: "user", content: `Summarize:\n${data}` },
+    { role: "user", content: `总结:\n${data}` },
   ]);
 
   return {
@@ -228,14 +228,14 @@ async function summarizeNode(state) {
 }
 ```
 
-### ✔ Explanation  
-- Reads output of **scrape** or **search**  
-- Asks LLM to produce structured summary  
-- Adds **final assistant message**  
+### ✔ 解释
+- 读取**抓取**或**搜索**的输出
+- 请求 LLM 生成结构化摘要
+- 添加**最终助手消息**
 
 ---
 
-## 🔹 BLOCK 9 — BUILD THE MULTI-AGENT GRAPH
+## 🔹 BLOCK 9 — 构建多智能体图
 
 ```js
 const graph = new StateGraph(MessagesAnnotation)
@@ -245,18 +245,18 @@ const graph = new StateGraph(MessagesAnnotation)
   .addNode("summarize", summarizeNode);
 ```
 
-### ✔ Explanation  
-You register all agents/nodes:
+### ✔ 解释
+您注册所有智能体/节点：
 
 ```
-plan → scrape → search → summarize
+计划 → 抓取 → 搜索 → 总结
 ```
 
-This is your multi-agent "company."
+这是您的多智能体“公司”。
 
 ---
 
-## 🔹 BLOCK 10 — FLOW LOGIC (Conditional Routing)
+## 🔹 BLOCK 10 — 流程逻辑 (条件路由)
 
 ```js
 graph.addEdge(START, "plan");
@@ -274,48 +274,48 @@ graph.addEdge("search", "summarize");
 graph.addEdge("summarize", END);
 ```
 
-### ✔ Explanation  
-- Start → Planner  
-- Planner decides which tool node runs  
-- scrape → summarize  
-- search → summarize  
-- summarize → END  
+### ✔ 解释
+- 开始 → 规划器
+- 规划器决定运行哪个工具节点
+- 抓取 → 总结
+- 搜索 → 总结
+- 总结 → 结束
 
-This is real **tool decision-making**.
+这是真正的**工具决策**。
 
 ---
 
-## 🔹 BLOCK 11 — Compile the Agent
+## 🔹 BLOCK 11 — 编译智能体
 
 ```js
 const agent = graph.compile();
 ```
 
-### ✔ Explanation  
-Turns the graph into a runnable multi-agent workflow.
+### ✔ 解释
+将图转换为可运行的多智能体工作流。
 
 ---
 
-## 🔹 BLOCK 12 — RUN THE AGENT
+## 🔹 BLOCK 12 — 运行智能体
 
 ```js
 const result = await agent.invoke({
   messages: [
-    { role: "user", content: "Find Google 2023 revenue" },
+    { role: "user", content: "查找 Google 2023 年的收入" },
   ],
 });
 ```
 
-### ✔ Explanation  
-- User query triggers Planner  
-- Planner sees it's a **search query**  
-- Runs **fakeSearch**  
-- Then **summarize**  
-- Outputs final assistant answer  
+### ✔ 解释
+- 用户查询触发规划器
+- 规划器识别这是一个**搜索查询**
+- 运行**虚假搜索**
+- 然后**总结**
+- 输出最终助手答案
 
 ---
 
-## 🔹 BLOCK 13 — Print Final Output
+## 🔹 BLOCK 13 — 打印最终输出
 
 ```js
 console.log(result.messages.at(-1).content);
@@ -323,25 +323,25 @@ console.log(result.messages.at(-1).content);
 
 ---
 
-# 📌 EXPECTED OUTPUT (Example)
+# 📌 预期输出 (示例)
 
 ```
-• Google’s 2023 revenue was approximately $307B.
-• Alphabet’s revenue saw a growth of 9%.
-• These numbers are retrieved from the fake search tool.
-• Shows annual performance metrics of Google/Alphabet.
-• Summary generated by AI from search results.
+• Google 2023 年的收入约为 $307B。
+• Alphabet 的收入增长了 9%。
+• 这些数字来自虚假搜索工具。
+• 显示了 Google/Alphabet 的年度业绩指标。
+• 摘要由 AI 根据搜索结果生成。
 ```
 
 ---
 
-# ▶️ HOW TO RUN
+# ▶️ 如何运行
 
 ```
 node 12-multi-agent.js
 ```
 
-Ensure `.env` contains:
+确保 `.env` 文件包含：
 
 ```
 OPENAI_API_KEY=your_key_here
@@ -349,19 +349,19 @@ OPENAI_API_KEY=your_key_here
 
 ---
 
-# 🌍 REAL-WORLD USE CASES
+# 🌍 实际应用场景
 
-This architecture is used in:
+此架构用于：
 
-### ✔ Perplexity AI  
-### ✔ Multi-agent research assistants  
-### ✔ Auto-analysts (SEO, finance, marketing)  
-### ✔ AI browser tools  
-### ✔ Data extraction + summary systems  
-### ✔ Supervisor → Worker agent systems  
-### ✔ RAG + Agents combined  
+### ✔ Perplexity AI
+### ✔ 多智能体研究助手
+### ✔ 自动化分析师 (SEO、金融、营销)
+### ✔ AI 浏览器工具
+### ✔ 数据提取 + 总结系统
+### ✔ 主管 → 工作者智能体系统
+### ✔ RAG + 智能体组合
 
 ---
 
-# ⭐ Next Lesson  
-**Lesson 13 — Multi-Agent System (Advanced Version: Real Tools + Branching + Dynamic Reasoning).**
+# ⭐ 下一课
+**第13课 — 多智能体系统 (高级版本：真实工具 + 分支 + 动态推理)。**

@@ -1,87 +1,88 @@
-# 📘 Lesson 11 — LangGraph Agent (Decide → Scrape → Summarize)
+# 📘 第11课 — LangGraph 智能体 (决定 → 抓取 → 总结)
 
-This lesson introduces you to **LangGraph**, the most powerful framework in LangChain for building:
+本课程将向您介绍 **LangGraph**，这是 LangChain 中最强大的框架，用于构建：
 
-- Multi-step AI workflows  
-- Multi-node reasoning graphs  
-- Multi-agent pipelines  
-- Deterministic AI flows  
-- Perplexity-style “reason → act → summarize” systems  
+- 多步骤 AI 工作流
+- 多节点推理图
+- 多智能体管道
+- 确定性 AI 流程
+- Perplexity 风格的“推理 → 行动 → 总结”系统
 
-Unlike simple chains, LangGraph gives you **nodes**, **edges**, and **state**, allowing you to build real Agents.
+与简单的链不同，LangGraph 为您提供了**节点**、**边**和**状态**，使您能够构建真正的智能体。
 
-In this lesson, we build a full 3-step agent:
+在本课程中，我们将构建一个完整的 3 步智能体：
 
-1️⃣ **DECIDE** → Extract URL from user message  
-2️⃣ **SCRAPE** → Fetch + clean website  
-3️⃣ **SUMMARIZE** → Generate 5 bullet points  
+1️⃣ **决定 (DECIDE)** → 从用户消息中提取 URL
+2️⃣ **抓取 (SCRAPE)** → 获取并清理网站内容
+3️⃣ **总结 (SUMMARIZE)** → 生成 5 个要点总结
 
-This README explains **every block in your code in exact sequence**.
-
----
-
-# 🧠 What is LangGraph? (Beginner-Friendly)
-
-LangGraph = “AI Workflows Made Like Flowcharts.”
-
-Instead of:
-
-```
-prompt → model → output
-```
-
-You build:
-
-```
-node1 → node2 → node3 → node4
-```
-
-Where each node:
-
-- has its own function  
-- receives state  
-- returns updated state  
-- passes messages to the next node  
-
-This makes your agent **predictable**, **controllable**, and **modular**.
-
-LangGraph is how you build:
-
-- Multi-agent systems  
-- Browser agents  
-- RAG agents  
-- Decider + Worker flows  
-- Complex automation agents  
-
-This chapter is your FIRST step into real agents.
+本 README 将**完全按照代码的顺序**解释**每个代码块**。
 
 ---
 
-# 🔥 Full Flow Diagram (Matches Your Code)
+# 🧠 什么是 LangGraph？(初学者友好)
+
+LangGraph = “像流程图一样构建 AI 工作流。”
+
+而不是：
 
 ```
-START
+提示 → 模型 → 输出
+```
+
+您构建：
+
+```
+节点1 → 节点2 → 节点3 → 节点4
+```
+
+其中每个节点：
+
+- 拥有自己的功能
+- 接收状态
+- 返回更新后的状态
+- 将消息传递给下一个节点
+
+这使得您的智能体**可预测**、**可控制**和**模块化**。
+
+LangGraph 是您构建以下系统的方式：
+
+- 多智能体系统
+- 浏览器智能体
+- RAG 智能体
+- 决策者 + 工作者流程
+- 复杂自动化智能体
+
+本章是您迈向真正智能体的第一步。
+
+---
+
+# 🔥 完整流程图 (与您的代码匹配)
+
+```
+开始
   ↓
-[ decideNode ]
-  │ Extract URL
-  │ If no URL → END
+[ 决定节点 ]
+  │ 提取 URL
+  │ 如果没有 URL → 结束
   ↓
-[ scrapeNode ]
-  │ Fetch webpage
-  │ Clean HTML
+[ 抓取节点 ]
+  │ 获取网页
+  │ 清理 HTML
   ↓
-[ summarizeNode ]
-  │ Summarize in 5 bullets
+[ 总结节点 ]
+  │ 总结成 5 个要点
   ↓
-END
+结束
 ```
 
 ---
 
-# 🧩 **CODE EXPLAINED BLOCK-BY-BLOCK (IN EXACT SEQUENCE)**
+# 🧩 **代码解释 (逐块按精确顺序)**
 
+---
 
-## 🔹 BLOCK 1 — dotenv Setup + Imports
+## 🔹 BLOCK 1 — dotenv 设置 + 导入
 
 ```js
 import { config } from "dotenv";
@@ -96,19 +97,19 @@ import {
 } from "@langchain/langgraph";
 ```
 
-### ✔ Explanation  
-- Loads `.env` (API keys)  
-- Imports OpenAI LLM  
-- Imports LangGraph components:  
-  - **MessagesAnnotation** → how messages are stored  
-  - **StateGraph** → build nodes + edges  
-  - **START / END** → entry / exit point of the agent  
+### ✔ 解释
+- 加载 `.env` (API 密钥)
+- 导入 OpenAI LLM
+- 导入 LangGraph 组件：
+  - **MessagesAnnotation** → 消息如何存储
+  - **StateGraph** → 构建节点 + 边
+  - **START / END** → 智能体的入口 / 出口点
 
-This is the base of any LangGraph workflow.
+这是任何 LangGraph 工作流的基础。
 
 ---
 
-## 🔹 BLOCK 2 — The Model (LLM)
+## 🔹 BLOCK 2 — 模型 (LLM)
 
 ```js
 const model = new ChatOpenAI({
@@ -117,16 +118,16 @@ const model = new ChatOpenAI({
 });
 ```
 
-### ✔ Explanation  
-- `gpt-4o-mini` = fast + cheap model  
-- `temperature: 0` = predictable output  
-- This model is used in **decideNode** and **summarizeNode**
+### ✔ 解释
+- `gpt-4o-mini` = 快速 + 经济的模型
+- `temperature: 0` = 可预测的输出
+- 此模型用于 **decideNode** 和 **summarizeNode**
 
-This is the “brain” used for reasoning.
+这是用于推理的“大脑”。
 
 ---
 
-## 🔹 BLOCK 3 — Scraper Function
+## 🔹 BLOCK 3 — 抓取函数
 
 ```js
 async function scrapeWebsite(url) {
@@ -146,20 +147,20 @@ async function scrapeWebsite(url) {
 }
 ```
 
-### ✔ Explanation  
-- Fetches URL  
-- Removes script/style tags  
-- Removes HTML  
-- Collapses whitespace  
-- Returns 2000 chars of clean readable text  
-- If failed → returns error string  
+### ✔ 解释
+- 获取 URL
+- 移除脚本/样式标签
+- 移除 HTML
+- 折叠空白符
+- 返回 2000 个字符的干净可读文本
+- 如果失败 → 返回错误字符串
 
-This prepares website text for LLM summarization.
+这为 LLM 总结准备了网站文本。
 
 ---
 
-## 🔹 BLOCK 4 — Node 1: decideNode  
-Extract URL from user message.
+## 🔹 BLOCK 4 — 节点 1: decideNode
+从用户消息中提取 URL。
 
 ```js
 async function decideNode(state) {
@@ -167,7 +168,7 @@ async function decideNode(state) {
     {
       role: "system",
       content:
-        "Extract ONLY the URL from the user message. If none exists, return NOURL.",
+        "仅从用户消息中提取 URL。如果不存在，则返回 NOURL。",
     },
     ...state.messages,
   ]);
@@ -185,18 +186,18 @@ async function decideNode(state) {
 }
 ```
 
-### ✔ Explanation  
-- Sends user message to LLM  
-- LLM extracts URL  
-- If no URL → returns `NONE`  
-- Adds message: `URL=http…`  
+### ✔ 解释
+- 将用户消息发送给 LLM
+- LLM 提取 URL
+- 如果没有 URL → 返回 `NONE`
+- 添加消息：`URL=http…`
 
-This node **decides** the flow of the graph.
+这个节点**决定**图的流程。
 
 ---
 
-## 🔹 BLOCK 5 — Node 2: scrapeNode  
-Scrape website using extracted URL.
+## 🔹 BLOCK 5 — 节点 2: scrapeNode
+使用提取的 URL 抓取网站。
 
 ```js
 async function scrapeNode(state) {
@@ -216,19 +217,19 @@ async function scrapeNode(state) {
 }
 ```
 
-### ✔ Explanation  
-- Reads URL from last message  
-- Calls scraper  
-- Adds 2 new messages:  
-  - Preview (`SCRAPED=`)  
-  - Full content (`SCRAPED_FULL=`)
+### ✔ 解释
+- 从最后一条消息中读取 URL
+- 调用抓取器
+- 添加 2 条新消息：
+  - 预览 (`SCRAPED=`)
+  - 完整内容 (`SCRAPED_FULL=`)
 
-This node collects the raw data for summarization.
+这个节点收集原始数据用于总结。
 
 ---
 
-## 🔹 BLOCK 6 — Node 3: summarizeNode  
-Summarize scraped text.
+## 🔹 BLOCK 6 — 节点 3: summarizeNode
+总结抓取到的文本。
 
 ```js
 async function summarizeNode(state) {
@@ -239,7 +240,7 @@ async function summarizeNode(state) {
   const summary = await model.invoke([
     {
       role: "user",
-      content: `Summarize this into 5 bullet points:\n${full}`,
+      content: `将此总结为 5 个要点：\\n${full}`,
     },
   ]);
 
@@ -252,15 +253,15 @@ async function summarizeNode(state) {
 }
 ```
 
-### ✔ Explanation  
-- Extracts scraped text  
-- Sends to LLM for summarization  
-- Adds final summary as assistant message  
-- This becomes the final output  
+### ✔ 解释
+- 提取抓取到的文本
+- 发送给 LLM 进行总结
+- 将最终总结作为助手消息添加
+- 这成为最终输出
 
 ---
 
-## 🔹 BLOCK 7 — Build the LangGraph Workflow
+## 🔹 BLOCK 7 — 构建 LangGraph 工作流
 
 ```js
 const graph = new StateGraph(MessagesAnnotation)
@@ -269,18 +270,18 @@ const graph = new StateGraph(MessagesAnnotation)
   .addNode("summarize", summarizeNode);
 ```
 
-### ✔ Explanation  
-You create a pipeline with 3 nodes:
+### ✔ 解释
+您创建了一个包含 3 个节点的管道：
 
 ```
-decide → scrape → summarize
+决定 → 抓取 → 总结
 ```
 
-These nodes define the agent’s “brain.”
+这些节点定义了智能体的“大脑”。
 
 ---
 
-## 🔹 BLOCK 8 — Add Edges (Flow Control)
+## 🔹 BLOCK 8 — 添加边 (流程控制)
 
 ```js
 graph.addEdge(START, "decide");
@@ -294,110 +295,109 @@ graph.addEdge("scrape", "summarize");
 graph.addEdge("summarize", END);
 ```
 
-### ✔ Explanation  
-- Start → decide  
-- If URL found → go to scrape  
-- Else → END  
-- scrape → summarize  
-- summarize → END  
+### ✔ 解释
+- 开始 → 决定
+- 如果找到 URL → 进入抓取
+- 否则 → 结束
+- 抓取 → 总结
+- 总结 → 结束
 
-This gives real branching logic (conditional flow).
+这提供了真实的条件逻辑 (条件流)。
 
 ---
 
-## 🔹 BLOCK 9 — Compile the Agent
+## 🔹 BLOCK 9 — 编译智能体
 
 ```js
 const agent = graph.compile();
 ```
 
-### ✔ Explanation  
-Turns your workflow graph into a runnable Agent.
+### ✔ 解释
+将您的工作流图转换为可运行的智能体。
 
 ---
 
-## 🔹 BLOCK 10 — Invoke the Agent
+## 🔹 BLOCK 10 — 调用智能体
 
 ```js
 const result = await agent.invoke({
   messages: [
     {
       role: "user",
-      content: "Scrape https://webreal.in and summarize it.",
+      content: "抓取 https://webreal.in 并总结它。",
     },
   ],
 });
 ```
 
-### ✔ Explanation  
-You feed the agent a message containing a URL.  
-Agent performs:
+### ✔ 解释
+您向智能体提供包含 URL 的消息。
+智能体执行：
 
-1. Extract URL  
-2. Scrape  
-3. Summarize  
+1. 提取 URL
+2. 抓取
+3. 总结
 
 ---
 
-## 🔹 BLOCK 11 — Print Final Summary
+## 🔹 BLOCK 11 — 打印最终总结
 
 ```js
 console.log(result.messages.at(-1).content);
 ```
 
-### ✔ Explanation  
-Outputs the final assistant message → the **bullet point summary**.
+### ✔ 解释
+输出最终的助手消息 → **要点总结**。
 
 ---
 
-# 📌 EXPECTED OUTPUT (Example)
+# 📌 预期输出 (示例)
 
 ```
-• WebReal is a modern web agency offering website development services.
-• Provides branding, UI/UX, and digital product development.
-• The website targets businesses that want a professional online presence.
-• Clean and simple layout highlighting professionalism.
-• Includes portfolio, contact information, and service categories.
+• WebReal 是一个提供网站开发服务的现代网络机构。
+• 提供品牌塑造、UI/UX 和数字产品开发。
+• 该网站面向希望建立专业在线形象的企业。
+• 布局简洁明了，突出专业性。
+• 包括作品集、联系信息和服务类别。
 ```
 
 
 
-# ▶️ HOW TO USE
+# ▶️ 如何使用
 
-## 1️⃣ Install deps
+## 1️⃣ 安装依赖
 ```
 npm install
 ```
 
-## 2️⃣ Add API key
+## 2️⃣ 添加 API 密钥
 ```
 OPENAI_API_KEY=your_key_here
 ```
 
-## 3️⃣ Run
+## 3️⃣ 运行
 ```
 node 11-agent-langgraph.js
 ```
 
 ---
 
-# 🌍 REAL-WORLD APPLICATIONS
+# 🌍 实际应用
 
-This 3-node graph is the same structure used in:
+这个 3 节点图与以下系统使用相同的结构：
 
-### ✔ Perplexity (search → scrape → summarize)  
-### ✔ Multi-agent research assistants  
-### ✔ Browser automation agents  
-### ✔ Workflow pipelines (fetch → analyze → decide)  
-### ✔ Digital marketing analyzers  
-### ✔ News summarizers  
-### ✔ Competitor analysis bots  
-### ✔ SEO audit tools  
+### ✔ Perplexity (搜索 → 抓取 → 总结)
+### ✔ 多智能体研究助手
+### ✔ 浏览器自动化智能体
+### ✔ 工作流管道 (获取 → 分析 → 决定)
+### ✔ 数字营销分析器
+### ✔ 新闻总结器
+### ✔ 竞争对手分析机器人
+### ✔ SEO 审计工具
 
-This lesson is your FIRST TRUE **LangGraph Agent**.
+本课是您的第一个真正的 **LangGraph 智能体**。
 
 ---
 
-# ⭐ Next Lesson  
-**Lesson 12 — Multi-Agent System (Supervisor → Workers).**
-
+# ⭐ 下一课
+**第12课 — 多智能体系统 (主管 → 工作者)。**
